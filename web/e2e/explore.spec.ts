@@ -31,7 +31,7 @@ test.describe("Explore — ask the register", () => {
     await expect(cards.first()).toBeVisible();
     // select the second card
     await cards.nth(1).click();
-    await expect(cards.nth(1)).toHaveClass(/border-accent/);
+    await expect(cards.nth(1)).toHaveClass(/border-sage/);
   });
 
   test("grounded answer loads on demand and lists sources", async ({ page }) => {

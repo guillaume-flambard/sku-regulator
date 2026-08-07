@@ -1,13 +1,11 @@
 "use client";
 
 import { useState, useCallback, useEffect, useMemo } from "react";
-import Link from "next/link";
 import { motion } from "motion/react";
 import {
   MagnifyingGlass,
   ArrowRight,
   ArrowLeft,
-  ShieldCheck,
   Sparkle,
   Globe,
   Hash,
@@ -16,6 +14,7 @@ import {
 } from "@phosphor-icons/react";
 
 import { api, type ClaimResult, type AskResult, type CountryVerdict } from "@/lib/api";
+import { SiteHeader } from "@/components/site-header";
 import { StatusBadge, CountryBadge, Eyebrow } from "@/components/badges";
 import { EuMap } from "@/components/eu-map";
 
@@ -98,22 +97,7 @@ export default function Explore() {
 
   return (
     <div className="min-h-[100dvh]">
-      <header className="border-b border-line bg-white/70 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-white">
-              <ShieldCheck size={16} weight="fill" />
-            </div>
-            <span className="font-semibold tracking-tight">sku-regulator</span>
-          </div>
-          <nav className="flex items-center gap-3 text-sm text-muted sm:gap-6">
-            <Link href="/" className="hover:text-foreground">Pipeline</Link>
-            <Link href="/explore" className="text-foreground">Explore</Link>
-            <Link href="/portfolio" className="hidden hover:text-foreground sm:inline">Portfolio</Link>
-            <Link href="/graph" className="hover:text-foreground">Graph</Link>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="mx-auto max-w-6xl px-6 py-12">
         <Eyebrow>Ask the register</Eyebrow>
@@ -133,7 +117,7 @@ export default function Explore() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="e.g. Can I say vitamin C supports immunity?"
-              className="w-full rounded-full border border-line bg-white py-3 pl-11 pr-4 text-[15px] outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+              className="w-full rounded-full border border-line bg-white py-3 pl-11 pr-4 text-[15px] outline-none focus:border-sage focus:ring-2 focus:ring-sage/20"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -141,7 +125,7 @@ export default function Explore() {
               value={country}
               onChange={(e) => setCountry(e.target.value)}
               aria-label="Target country"
-              className="rounded-full border border-line bg-white px-4 py-3 text-sm outline-none focus:border-accent"
+              className="rounded-full border border-line bg-white px-4 py-3 text-sm outline-none focus:border-sage"
             >
               <option value="FR">🇫🇷 FR</option>
               <option value="DE">🇩🇪 DE</option>
@@ -151,7 +135,7 @@ export default function Explore() {
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-3 text-sm font-medium text-background disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-3 text-sm font-medium text-white disabled:opacity-60"
             >
               {loading ? <CircleNotch size={16} className="animate-spin" /> : <Sparkle size={16} />}
               Ask
@@ -165,7 +149,7 @@ export default function Explore() {
             <button
               key={ex.q}
               onClick={() => { setQuery(ex.q); setCountry(ex.country); runSearch(ex.q, ex.country); }}
-              className="rounded-full border border-line bg-white px-3.5 py-1.5 text-xs text-muted transition-colors hover:border-accent/40 hover:text-foreground"
+              className="rounded-full border border-line bg-white px-3.5 py-1.5 text-xs text-muted transition-colors hover:border-sage/40 hover:text-ink"
             >
               {ex.q}
             </button>
@@ -197,7 +181,7 @@ export default function Explore() {
               </div>
             ) : !error && results.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-line p-10 text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-accent-soft text-accent">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-sage-soft text-sage">
                   <MagnifyingGlass size={22} />
                 </div>
                 <h3 className="mt-4 text-lg font-semibold">No claim matched “{query}”</h3>
@@ -211,7 +195,7 @@ export default function Explore() {
                     <button
                       key={ex.q}
                       onClick={() => { setQuery(ex.q); setCountry(ex.country); runSearch(ex.q, ex.country); }}
-                      className="rounded-full border border-line bg-white px-3.5 py-1.5 text-xs text-muted transition-colors hover:border-accent/40 hover:text-foreground"
+                      className="rounded-full border border-line bg-white px-3.5 py-1.5 text-xs text-muted transition-colors hover:border-sage/40 hover:text-ink"
                     >
                       {ex.q}
                     </button>
@@ -225,7 +209,7 @@ export default function Explore() {
                   <button
                     onClick={loadAnswer}
                     disabled={askLoading}
-                    className="inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline disabled:opacity-60"
+                    className="inline-flex items-center gap-1 text-sm font-medium text-sage hover:underline disabled:opacity-60"
                   >
                     {askLoading ? <CircleNotch size={14} className="animate-spin" /> : <ArrowRight size={14} />}
                     {askLoading ? "Answering…" : "Read the grounded answer"}
@@ -250,7 +234,7 @@ export default function Explore() {
             <div className="rounded-2xl border border-line bg-white p-5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm font-medium">
-                  <Globe size={16} className="text-accent" /> Market view
+                  <Globe size={16} className="text-sage" /> Market view
                 </div>
                 <span className="font-mono text-xs text-muted">{country}</span>
               </div>
@@ -285,11 +269,11 @@ function ResultCard({
     <button
       onClick={onSelect}
       className={`w-full rounded-2xl border p-4 text-left transition-shadow ${
-        active ? "border-accent/50 bg-accent-soft/40 shadow-sm" : "border-line bg-white hover:border-accent/30 hover:shadow-sm"
+        active ? "border-sage/50 bg-sage-soft/40 shadow-sm" : "border-line bg-white hover:border-sage/30 hover:shadow-sm"
       }`}
     >
       <div className="flex flex-wrap items-center gap-2">
-        <code className="rounded bg-accent-soft px-2 py-0.5 font-mono text-xs text-accent">
+        <code className="rounded bg-sage-soft px-2 py-0.5 font-mono text-xs text-sage">
           {r.policy_item_code}
         </code>
         <StatusBadge status={r.status} />
@@ -298,7 +282,7 @@ function ResultCard({
           {r.claim_type ?? "—"}
         </span>
       </div>
-      <p className="mt-2.5 text-[15px] leading-relaxed text-foreground/90">{r.claim_text}</p>
+      <p className="mt-2.5 text-[15px] leading-relaxed text-ink/90">{r.claim_text}</p>
       {r.matches && (
         <div className="mt-3 flex items-center gap-4 border-t border-line pt-2.5 font-mono text-xs text-muted">
           <span className="inline-flex items-center gap-1"><Hash size={12} /> fts {r.matches.fts?.toFixed(2) ?? "—"}</span>
@@ -328,21 +312,21 @@ function AnswerCard({ ask, onBack }: { ask: AskResult; onBack: () => void }) {
   const shown = words.slice(0, revealed).join(" ");
 
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-accent/25 bg-white">
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-sage/25 bg-white">
       <div className="border-b border-line p-4">
-        <button onClick={onBack} className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground">
+        <button onClick={onBack} className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink">
           <ArrowLeft size={14} /> Back to matches
         </button>
       </div>
       <div className="space-y-3 p-5">
         <div className="flex items-start gap-2.5">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sage-soft text-sage">
             <Sparkle size={14} weight="fill" />
           </div>
-          <p className="text-[15px] leading-relaxed text-foreground/90">
+          <p className="text-[15px] leading-relaxed text-ink/90">
             {shown}
             {revealed < words.length && (
-              <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-accent align-middle" />
+              <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-sage align-middle" />
             )}
           </p>
         </div>
@@ -352,7 +336,7 @@ function AnswerCard({ ask, onBack }: { ask: AskResult; onBack: () => void }) {
         <div className="space-y-2">
           {ask.sources.map((s) => (
             <div key={s.policy_item_code} className="flex items-center gap-2 text-sm">
-              <code className="rounded bg-accent-soft px-1.5 py-0.5 font-mono text-xs text-accent">{s.policy_item_code}</code>
+              <code className="rounded bg-sage-soft px-1.5 py-0.5 font-mono text-xs text-sage">{s.policy_item_code}</code>
               <StatusBadge status={s.status} />
               <span className="text-xs text-muted">{s.claim_text.slice(0, 60)}…</span>
             </div>

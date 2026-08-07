@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import {
   ShieldCheck,
   XCircle,
@@ -13,6 +12,7 @@ import {
 } from "@phosphor-icons/react";
 
 import { api, type Anomaly, type Product } from "@/lib/api";
+import { SiteHeader } from "@/components/site-header";
 import { Eyebrow, Confidence } from "@/components/badges";
 
 export default function Portfolio() {
@@ -69,22 +69,7 @@ export default function Portfolio() {
 
   return (
     <div className="min-h-[100dvh]">
-      <header className="border-b border-line bg-white/70 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-white">
-              <ShieldCheck size={16} weight="fill" />
-            </div>
-            <span className="font-semibold tracking-tight">sku-regulator</span>
-          </div>
-          <nav className="flex items-center gap-3 text-sm text-muted sm:gap-6">
-            <Link href="/" className="hover:text-foreground">Pipeline</Link>
-            <Link href="/explore" className="hover:text-foreground">Explore</Link>
-            <Link href="/portfolio" className="text-foreground">Portfolio</Link>
-            <Link href="/graph" className="hidden hover:text-foreground sm:inline">Graph</Link>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="mx-auto max-w-6xl px-6 py-12">
         <Eyebrow>Compliance portfolio</Eyebrow>
@@ -104,8 +89,8 @@ export default function Portfolio() {
               onClick={() => setCountry(c)}
               className={`rounded-full border px-4 py-1.5 text-sm ${
                 country === c
-                  ? "border-accent bg-accent-soft text-accent"
-                  : "border-line bg-white text-muted hover:border-accent/30"
+                  ? "border-sage bg-sage-soft text-sage"
+                  : "border-line bg-white text-muted hover:border-sage/30"
               }`}
             >
               {c || "All markets"}
@@ -135,7 +120,7 @@ export default function Portfolio() {
               <div key={p.sku} className="rounded-2xl border border-line bg-white p-5">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-soft text-accent">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sage-soft text-sage">
                       <Package size={20} weight="duotone" />
                     </div>
                     <div>
@@ -154,7 +139,7 @@ export default function Portfolio() {
                         <XCircle size={13} weight="fill" /> Needs review
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-medium text-accent">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-sage-soft px-2.5 py-0.5 text-xs font-medium text-sage">
                         <ShieldCheck size={13} weight="fill" /> Compliant
                       </span>
                     )}
@@ -188,7 +173,7 @@ export default function Portfolio() {
                 <div key={a.id} className="flex flex-col gap-3 rounded-2xl border border-line bg-white p-4 sm:flex-row sm:items-center sm:gap-4">
                   <div
                     className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
-                      a.severity === "high" ? "bg-[#fbeae6] text-danger" : a.severity === "medium" ? "bg-[#fbf1df] text-warning" : "bg-accent-soft text-accent"
+                      a.severity === "high" ? "bg-[#fbeae6] text-danger" : a.severity === "medium" ? "bg-[#fbf1df] text-warning" : "bg-sage-soft text-sage"
                     }`}
                   >
                     <Flag size={16} weight="fill" />
@@ -197,9 +182,9 @@ export default function Portfolio() {
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-sm font-medium">{a.product_name ?? a.product_sku ?? "Unknown product"}</span>
                       {a.claim_code && (
-                        <code className="rounded bg-accent-soft px-1.5 py-0.5 font-mono text-xs text-accent">{a.claim_code}</code>
+                        <code className="rounded bg-sage-soft px-1.5 py-0.5 font-mono text-xs text-sage">{a.claim_code}</code>
                       )}
-                      <span className="rounded-full bg-line px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-foreground/80">
+                      <span className="rounded-full bg-line px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-ink/80">
                         {a.severity}
                       </span>
                     </div>
@@ -209,7 +194,7 @@ export default function Portfolio() {
                     <button
                       onClick={() => resolve(a.id)}
                       disabled={resolving === a.id}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-xs font-medium text-background transition-transform hover:-translate-y-px disabled:opacity-60"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-xs font-medium text-white transition-transform hover:-translate-y-px disabled:opacity-60"
                     >
                       <Check size={14} /> {resolving === a.id ? "Resolving…" : "Resolve"}
                     </button>
@@ -222,11 +207,11 @@ export default function Portfolio() {
 
         {/* undo toast */}
         {toast && (
-          <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full border border-line bg-foreground px-4 py-2.5 text-sm text-background shadow-lg">
+          <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full border border-line bg-ink px-4 py-2.5 text-sm text-white shadow-lg">
             <span>{toast.label}</span>
             <button
               onClick={() => undo(toast.id)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-background/30 px-3 py-1 text-xs font-medium transition-colors hover:bg-background/10"
+              className="inline-flex items-center gap-1.5 rounded-full border border-background/30 px-3 py-1 text-xs font-medium transition-colors hover:bg-mist/10"
             >
               <ArrowCounterClockwise size={13} /> Undo
             </button>

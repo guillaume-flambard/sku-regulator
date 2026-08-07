@@ -1,41 +1,125 @@
 @import "tailwindcss";
 
+/* ============================================================
+   sku-regulator design system (Stitch-derived, web/DESIGN.md)
+   ============================================================ */
 :root {
-  --background: #f7f8f6;
-  --foreground: #18211d;
-  --accent: #0f6b4f;
-  --accent-soft: #e6f2ec;
-  --line: #e2e7e3;
+  /* surfaces */
+  --mist: #f7f8f6;
+  --background: #f7faf6;
+  --surface: #f7faf6;
+  --surface-container: #ebefea;
+  --surface-container-low: #f1f5f0;
+  --surface-container-high: #e5e9e5;
+  --surface-container-highest: #e0e3df;
+  --surface-container-lowest: #ffffff;
+  --surface-variant: #e0e3df;
+  --inverse-surface: #2d312f;
+  --inverse-on-surface: #eef2ed;
+  /* ink / text */
+  --ink: #18211d;
+  --on-surface: #181d1a;
+  --on-background: #181d1a;
   --muted: #5b6b63;
-  --danger: #b3402e;
-  --warning: #b7791f;
+  --on-surface-variant: #3f4944;
+  /* accent (sage) */
+  --sage: #0f6b4f;
+  --primary: #00513a;
+  --primary-container: #0f6b4f;
+  --on-primary: #ffffff;
+  --on-primary-container: #97e8c5;
+  --sage-soft: #e6f2ec;
+  /* semantic */
+  --line: #e2e7e3;
+  --outline: #6f7a73;
+  --outline-variant: #bec9c2;
+  --brick: #b3402e;
+  --brick-tint: #f9ebe9;
+  --amber: #b7791f;
+  --amber-tint: #f9f3e6;
+  --error: #ba1a1a;
+  /* misc */
+  --secondary: #57615b;
+  --secondary-container: #d8e2db;
+  --secondary-fixed: #dbe5de;
+  --secondary-fixed-dim: #bfc9c2;
+  --on-secondary: #ffffff;
+  --on-secondary-container: #5b6560;
 }
 
 @theme inline {
+  /* colors */
+  --color-mist: var(--mist);
   --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-accent: var(--accent);
-  --color-accent-soft: var(--accent-soft);
-  --color-line: var(--line);
+  --color-surface: var(--surface);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface-variant: var(--surface-variant);
+  --color-inverse-surface: var(--inverse-surface);
+  --color-inverse-on-surface: var(--inverse-on-surface);
+  --color-ink: var(--ink);
+  --color-on-surface: var(--on-surface);
+  --color-on-background: var(--on-background);
   --color-muted: var(--muted);
-  --color-danger: var(--danger);
-  --color-warning: var(--warning);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-sage: var(--sage);
+  --color-primary: var(--primary);
+  --color-primary-container: var(--primary-container);
+  --color-on-primary: var(--on-primary);
+  --color-on-primary-container: var(--on-primary-container);
+  --color-sage-soft: var(--sage-soft);
+  --color-line: var(--line);
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+  --color-brick: var(--brick);
+  --color-brick-tint: var(--brick-tint);
+  --color-amber: var(--amber);
+  --color-amber-tint: var(--amber-tint);
+  --color-error: var(--error);
+  --color-secondary: var(--secondary);
+  --color-secondary-container: var(--secondary-container);
+  --color-secondary-fixed: var(--secondary-fixed);
+  --color-secondary-fixed-dim: var(--secondary-fixed-dim);
+  --color-on-secondary: var(--on-secondary);
+  --color-on-secondary-container: var(--on-secondary-container);
+  /* fonts */
+  --font-sans: var(--font-geist-sans), Geist, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), "Geist Mono", monospace;
+  /* radius */
+  --radius-DEFAULT: 0.25rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-full: 9999px;
+}
+
+/* spacing + typography scale */
+@theme {
+  --spacing-space-xs: 4px;
+  --spacing-space-sm: 8px;
+  --spacing-space-md: 16px;
+  --spacing-space-lg: 24px;
+  --spacing-space-xl: 32px;
+  --spacing-gutter: 1.5rem;
+  --spacing-container-max: 1152px;
+
+  --font-body-base: Geist, system-ui, sans-serif;
+  --font-data-mono: "Geist Mono", monospace;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--mist);
+  color: var(--ink);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
 ::selection {
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: var(--sage-soft);
+  color: var(--sage);
 }
 
-/* fine scrollbar */
 * {
   scrollbar-width: thin;
   scrollbar-color: #c8d1cc transparent;

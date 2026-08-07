@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import dynamic from "next/dynamic";
-import { ShieldCheck, CircleNotch } from "@phosphor-icons/react";
+import { CircleNotch } from "@phosphor-icons/react";
 
 import { api } from "@/lib/api";
+import { SiteHeader } from "@/components/site-header";
 import { Eyebrow } from "@/components/badges";
 
 const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), { ssr: false });
@@ -70,22 +70,7 @@ export default function GraphPage() {
 
   return (
     <div className="min-h-[100dvh]">
-      <header className="border-b border-line bg-white/70 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-white">
-              <ShieldCheck size={16} weight="fill" />
-            </div>
-            <span className="font-semibold tracking-tight">sku-regulator</span>
-          </div>
-          <nav className="flex items-center gap-3 text-sm text-muted sm:gap-6">
-            <Link href="/" className="hover:text-foreground">Pipeline</Link>
-            <Link href="/explore" className="hover:text-foreground">Explore</Link>
-            <Link href="/portfolio" className="hidden hover:text-foreground sm:inline">Portfolio</Link>
-            <Link href="/graph" className="text-foreground">Graph</Link>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="mx-auto max-w-6xl px-6 py-12">
         <Eyebrow>Knowledge graph</Eyebrow>
