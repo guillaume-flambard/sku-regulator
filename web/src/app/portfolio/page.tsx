@@ -68,10 +68,10 @@ export default function Portfolio() {
   }, []);
 
   return (
-    <div className="min-h-[100dvh]">
+    <div className="min-h-[100dvh] bg-mist">
       <SiteHeader />
 
-      <main className="mx-auto max-w-6xl px-6 py-12">
+      <main className="mx-auto max-w-container-max px-gutter py-12">
         <Eyebrow>Compliance portfolio</Eyebrow>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
           Your SKUs, checked against the register
@@ -101,7 +101,7 @@ export default function Portfolio() {
         {loading ? (
           <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[0, 1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-40 animate-pulse rounded-2xl border border-line bg-white" />
+              <div key={i} className="h-40 animate-pulse rounded-xl border border-line bg-white" />
             ))}
           </div>
         ) : error && products.length === 0 ? (
@@ -117,7 +117,7 @@ export default function Portfolio() {
         ) : (
           <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filtered.map((p) => (
-              <div key={p.sku} className="rounded-2xl border border-line bg-white p-5">
+              <div key={p.sku} className="rounded-xl border border-line bg-white p-5">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sage-soft text-sage">
@@ -129,7 +129,7 @@ export default function Portfolio() {
                     </div>
                   </div>
                 </div>
-                <div className="mt-3 flex items-center gap-1.5 font-mono text-xs text-muted">
+                <div className="mt-3 flex items-center gap-1.5 font-data-mono text-xs text-muted">
                   <MapPin size={12} /> {p.country_code} · {p.sku}
                 </div>
                 <div className="mt-4 flex items-center justify-between border-t border-line pt-3">
@@ -164,13 +164,13 @@ export default function Portfolio() {
           </p>
 
           {anomalies.length === 0 ? (
-            <div className="mt-6 rounded-2xl border border-dashed border-line p-8 text-center text-muted">
+            <div className="mt-6 rounded-xl border border-dashed border-line p-8 text-center text-muted">
               Queue clear. No open anomalies.
             </div>
           ) : (
             <div className="mt-6 space-y-3">
               {anomalies.map((a) => (
-                <div key={a.id} className="flex flex-col gap-3 rounded-2xl border border-line bg-white p-4 sm:flex-row sm:items-center sm:gap-4">
+                <div key={a.id} className="flex flex-col gap-3 rounded-xl border border-line bg-white p-4 sm:flex-row sm:items-center sm:gap-4">
                   <div
                     className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
                       a.severity === "high" ? "bg-[#fbeae6] text-danger" : a.severity === "medium" ? "bg-[#fbf1df] text-warning" : "bg-sage-soft text-sage"
@@ -182,9 +182,9 @@ export default function Portfolio() {
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-sm font-medium">{a.product_name ?? a.product_sku ?? "Unknown product"}</span>
                       {a.claim_code && (
-                        <code className="rounded bg-sage-soft px-1.5 py-0.5 font-mono text-xs text-sage">{a.claim_code}</code>
+                        <code className="rounded bg-sage-soft px-1.5 py-0.5 font-data-mono text-xs text-sage">{a.claim_code}</code>
                       )}
-                      <span className="rounded-full bg-line px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-ink/80">
+                      <span className="rounded-full bg-line px-2 py-0.5 font-data-mono text-[10px] uppercase tracking-wider text-ink/80">
                         {a.severity}
                       </span>
                     </div>

@@ -69,10 +69,10 @@ export default function GraphPage() {
   );
 
   return (
-    <div className="min-h-[100dvh]">
+    <div className="min-h-[100dvh] bg-mist">
       <SiteHeader />
 
-      <main className="mx-auto max-w-6xl px-6 py-12">
+      <main className="mx-auto max-w-container-max px-gutter py-12">
         <Eyebrow>Knowledge graph</Eyebrow>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
           Products, claims, ingredients — one view
@@ -97,7 +97,7 @@ export default function GraphPage() {
 
         <div
           ref={containerRef}
-          className="mt-6 h-[560px] overflow-hidden rounded-2xl border border-line bg-white"
+          className="mt-6 h-[560px] overflow-hidden rounded-xl border border-line bg-white"
         >
           {loading ? (
             <div className="flex h-full items-center justify-center gap-2 text-muted">

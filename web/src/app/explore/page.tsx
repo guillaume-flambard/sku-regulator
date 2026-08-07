@@ -96,12 +96,12 @@ export default function Explore() {
   }, [ask, query, country]);
 
   return (
-    <div className="min-h-[100dvh]">
+    <div className="min-h-[100dvh] bg-mist">
       <SiteHeader />
 
-      <main className="mx-auto max-w-6xl px-6 py-12">
+      <main className="mx-auto max-w-container-max px-gutter py-12">
         <Eyebrow>Ask the register</Eyebrow>
-        <h1 className="mt-3 max-w-2xl text-3xl font-semibold tracking-tight md:text-4xl">
+        <h1 className="mt-4 text-3xl font-bold tracking-tight text-ink md:text-5xl">
           &ldquo;Can I put this on the label?&rdquo;
         </h1>
         <p className="mt-2 max-w-2xl text-muted">
@@ -135,7 +135,7 @@ export default function Explore() {
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-3 text-sm font-medium text-white disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-full bg-sage px-6 py-3 text-body-sm font-semibold text-white disabled:opacity-60"
             >
               {loading ? <CircleNotch size={16} className="animate-spin" /> : <Sparkle size={16} />}
               Ask
@@ -176,12 +176,12 @@ export default function Explore() {
             {loading ? (
               <div className="space-y-3">
                 {[0, 1, 2].map((i) => (
-                  <div key={i} className="h-28 animate-pulse rounded-2xl border border-line bg-white" />
+                  <div key={i} className="h-28 animate-pulse rounded-xl border border-line bg-white" />
                 ))}
               </div>
             ) : !error && results.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-line p-10 text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-sage-soft text-sage">
+              <div className="rounded-xl border border-dashed border-line p-10 text-center">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-sage-soft text-sage">
                   <MagnifyingGlass size={22} />
                 </div>
                 <h3 className="mt-4 text-lg font-semibold">No claim matched “{query}”</h3>
@@ -231,12 +231,12 @@ export default function Explore() {
 
           {/* right: map */}
           <div className="lg:sticky lg:top-8 lg:self-start">
-            <div className="rounded-2xl border border-line bg-white p-5">
+            <div className="rounded-xl border border-line bg-white p-5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <Globe size={16} className="text-sage" /> Market view
                 </div>
-                <span className="font-mono text-xs text-muted">{country}</span>
+                <span className="font-data-mono text-xs text-muted">{country}</span>
               </div>
               <div className="mt-3">
                 <EuMap
@@ -268,23 +268,23 @@ function ResultCard({
   return (
     <button
       onClick={onSelect}
-      className={`w-full rounded-2xl border p-4 text-left transition-shadow ${
+      className={`w-full rounded-xl border p-4 text-left transition-shadow ${
         active ? "border-sage/50 bg-sage-soft/40 shadow-sm" : "border-line bg-white hover:border-sage/30 hover:shadow-sm"
       }`}
     >
       <div className="flex flex-wrap items-center gap-2">
-        <code className="rounded bg-sage-soft px-2 py-0.5 font-mono text-xs text-sage">
+        <code className="rounded bg-sage-soft px-2 py-0.5 font-data-mono text-xs text-sage">
           {r.policy_item_code}
         </code>
         <StatusBadge status={r.status} />
         <CountryBadge verdict={r.country_status} />
-        <span className="ml-auto font-mono text-xs text-muted">
+        <span className="ml-auto font-data-mono text-xs text-muted">
           {r.claim_type ?? "—"}
         </span>
       </div>
       <p className="mt-2.5 text-[15px] leading-relaxed text-ink/90">{r.claim_text}</p>
       {r.matches && (
-        <div className="mt-3 flex items-center gap-4 border-t border-line pt-2.5 font-mono text-xs text-muted">
+        <div className="mt-3 flex items-center gap-4 border-t border-line pt-2.5 font-data-mono text-xs text-muted">
           <span className="inline-flex items-center gap-1"><Hash size={12} /> fts {r.matches.fts?.toFixed(2) ?? "—"}</span>
           <span className="inline-flex items-center gap-1"><Paperclip size={12} /> vec {r.matches.vector?.toFixed(2) ?? "—"}</span>
         </div>
@@ -312,7 +312,7 @@ function AnswerCard({ ask, onBack }: { ask: AskResult; onBack: () => void }) {
   const shown = words.slice(0, revealed).join(" ");
 
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-sage/25 bg-white">
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-sage/25 bg-white">
       <div className="border-b border-line p-4">
         <button onClick={onBack} className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink">
           <ArrowLeft size={14} /> Back to matches
@@ -336,7 +336,7 @@ function AnswerCard({ ask, onBack }: { ask: AskResult; onBack: () => void }) {
         <div className="space-y-2">
           {ask.sources.map((s) => (
             <div key={s.policy_item_code} className="flex items-center gap-2 text-sm">
-              <code className="rounded bg-sage-soft px-1.5 py-0.5 font-mono text-xs text-sage">{s.policy_item_code}</code>
+              <code className="rounded bg-sage-soft px-1.5 py-0.5 font-data-mono text-xs text-sage">{s.policy_item_code}</code>
               <StatusBadge status={s.status} />
               <span className="text-xs text-muted">{s.claim_text.slice(0, 60)}…</span>
             </div>
