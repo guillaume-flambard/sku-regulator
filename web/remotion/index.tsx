@@ -2,9 +2,12 @@ import React from "react";
 import { Composition, registerRoot } from "remotion";
 
 import { DemoVideo } from "./DemoVideo";
+import { demoVideoSchema } from "./schema";
 import { SCENES, VIDEO } from "../../scripts/demo-script";
 
-const totalFrames = SCENES.reduce((acc, s) => acc + s.durationSec, 0) * VIDEO.fps + VIDEO.fps * 2.5;
+const totalFrames =
+  SCENES.reduce((acc, s) => acc + s.durationSec, 0) * VIDEO.fps +
+  VIDEO.fps * 2.5;
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -15,6 +18,15 @@ export const RemotionRoot: React.FC = () => {
       fps={VIDEO.fps}
       width={VIDEO.width}
       height={VIDEO.height}
+      schema={demoVideoSchema}
+      defaultProps={{
+        scenes: SCENES.map((s) => s.id),
+        endCard: {
+          title: "sku-regulator",
+          tagline: "From a stubborn EU portal to compliant, multi-country product data.",
+          credit: 'Music: "Airplane Mode" by Josh Woodward (joshwoodward.com), CC BY 4.0.',
+        },
+      }}
     />
   );
 };

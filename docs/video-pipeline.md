@@ -15,10 +15,24 @@ make demo-video      # 4 steps below
 |---|---|---|
 | 1 | `scripts/fetch_music.mjs` | Downloads the background track (CC BY 4.0) into `audio/` |
 | 2 | `scripts/record_demo.mjs` | Plays the scene actions in real Chromium, `recordVideo` → `video/raw/scene-*.webm` |
-| 3 | `npx remotion render` | Composes the scenes: title cards, subtitle captions, Ken-Burns zooms, fade transitions → `video/final/composed.mp4` |
+| 3 | `npx remotion render` | Composes the scenes: title cards, word-level karaoke captions, Ken-Burns zooms, `TransitionSeries` (wipe/iris/fade) → `video/final/composed.mp4` |
 | 4 | `scripts/assemble_video.mjs` | Mixes the music at low volume with fades → `video/final/sku-regulator-demo.mp4` |
 
 Output: **`video/final/sku-regulator-demo.mp4`** (1080p, H.264 + AAC).
+
+## Video quality (best practices applied)
+
+- **Transitions** (`@remotion/transitions`): `wipe` between scenes, `iris` into
+  the compliance scene, `fade` into the end card — no hand-rolled fades.
+- **Word-level captions** (`@remotion/captions`): karaoke-style captions where
+  the active word is highlighted in the brand green. Since there is no
+  voiceover, timings are synthesized from `durationSec` per scene
+  (`combineTokensWithinMilliseconds: 500` for a fast demo pace).
+- **Motion restraint**: Ken-Burns zooms stay subtle (scale ≤ 1.06) and every
+  easing uses `Easing.out(Easing.quad)`; captions stay readable for ≥2.5s.
+- **Editable props**: the Composition exposes a Zod `schema` +
+  `defaultProps` (`web/remotion/schema.ts`) so an agent can regenerate the video
+  with new text/durations without touching the React code.
 
 ## The source of truth
 

@@ -1,12 +1,13 @@
 import React from "react";
-import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, interpolate, useCurrentFrame, Easing } from "remotion";
 import type { Scene } from "../../scripts/demo-script";
+import { Captions } from "./Captions";
 
 /**
- * Overlay rendered on top of each recorded scene:
+ * Overlay on each recorded scene:
  *  - a title card (short lead-in) with the scene title,
- *  - animated subtitle captions at the bottom (burn-in),
- *  - an optional slow zoom-in toward a focus point.
+ *  - word-level karaoke captions (burn-in) via Captions,
+ *  - a scene index chip (top-right).
  */
 
 const ACCENT = "#0f6b4f";
@@ -16,35 +17,16 @@ const TITLE_LEAD_IN_FRAMES = 60; // 2s at 30fps
 
 export const SceneOverlay: React.FC<{ scene: Scene; index: number }> = ({ scene, index }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
 
-  // caption cycle: each subtitle shows for a slice of the scene duration
-  const captions = scene.subtitles.length ? scene.subtitles : [scene.title];
-  const captionDuration = Math.max(2, Math.floor(scene.durationSec / captions.length)) * fps;
-  const captionIndex = Math.min(
-    captions.length - 1,
-    Math.floor((frame - TITLE_LEAD_IN_FRAMES) / captionDuration),
-  );
-  const showCaption = frame >= TITLE_LEAD_IN_FRAMES;
-
-  // fade in/out for each caption
-  const local = (frame - TITLE_LEAD_IN_FRAMES) % captionDuration;
-  const captionOpacity = showCaption ? interpolate(local, [0, 12, captionDuration - 12, captionDuration], [0, 1, 1, 0]) : 0;
-
-  // title card fades out as the caption comes in
-  const titleOpacity = interpolate(frame, [0, TITLE_LEAD_IN_FRAMES * 0.6, TITLE_LEAD_IN_FRAMES], [1, 1, 0]);
+  const titleOpacity = interpolate(frame, [0, TITLE_LEAD_IN_FRAMES * 0.6, TITLE_LEAD_IN_FRAMES], [1, 1, 0], {
+    easing: Easing.out(Easing.quad),
+    extrapolateRight: "clamp",
+  });
 
   return (
     <AbsoluteFill style={{ pointerEvents: "none" }}>
       {/* title card */}
-      <AbsoluteFill
-        style={{
-          justifyContent: "flex-start",
-          alignItems: "center",
-          paddingTop: 140,
-          opacity: titleOpacity,
-        }}
-      >
+      <AbsoluteFill style={{ justifyContent: "flex-start", alignItems: "center", paddingTop: 140, opacity: titleOpacity }}>
         <div
           style={{
             fontSize: 56,
@@ -60,33 +42,8 @@ export const SceneOverlay: React.FC<{ scene: Scene; index: number }> = ({ scene,
         </div>
       </AbsoluteFill>
 
-      {/* bottom subtitle captions (burn-in) */}
-      <AbsoluteFill
-        style={{
-          justifyContent: "flex-end",
-          alignItems: "center",
-          paddingBottom: 90,
-        }}
-      >
-        {showCaption && (
-          <div style={{ opacity: captionOpacity }}>
-            <div
-              style={{
-                fontSize: 34,
-                fontWeight: 600,
-                color: "#fff",
-                backgroundColor: "rgba(24,33,29,0.82)",
-                padding: "14px 28px",
-                borderRadius: 12,
-                maxWidth: 1500,
-                textAlign: "center",
-              }}
-            >
-              {captions[captionIndex]}
-            </div>
-          </div>
-        )}
-      </AbsoluteFill>
+      {/* word-level karaoke captions (burn-in) */}
+      <Captions scene={scene} />
 
       {/* scene index chip */}
       <AbsoluteFill style={{ justifyContent: "flex-end", alignItems: "flex-end", padding: 40 }}>

@@ -59,7 +59,7 @@ export const SCENES: Scene[] = [
     id: "explore",
     title: "Ask the register",
     subtitles: ["Vitamin C immune claim — authorised", "hybrid FTS + vector search", "The grounded answer cites the register"],
-    durationSec: 27,
+    durationSec: 28,
     focus: { x: 0.5, y: 0.5, scale: 1.0 },
     actions: [
       { type: "goto", target: "/explore", waitMs: 3500, caption: "Vitamin C immune claim — authorised in FR" },
@@ -99,7 +99,7 @@ export const SCENES: Scene[] = [
     id: "close",
     title: "The thing that doesn't exist yet",
     subtitles: ["Five steps · real EU data · local AI · human sign-off", "Partially built"],
-    durationSec: 9,
+    durationSec: 8,
     actions: [
       { type: "goto", target: "/", waitMs: 1500, caption: "Five steps · real EU data · human sign-off" },
       { type: "scroll", target: "#pipeline", waitMs: 2500, caption: "The thing that doesn't exist yet — partially built" },

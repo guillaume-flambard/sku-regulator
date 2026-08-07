@@ -22,6 +22,14 @@ if (!existsSync(MUSIC)) throw new Error(`music missing: ${MUSIC}. Run scripts/fe
 
 console.log("[assemble] mixing background music (fade in/out, low volume)…");
 
+// read the composed video duration so the music fade-out lands near the end
+const durOut = execSync(
+  `ffprobe -v error -show_entries format=duration -of csv=p=0 ${JSON.stringify(COMPOSED)}`,
+  { encoding: "utf8" },
+).trim();
+const dur = parseFloat(durOut) || 60;
+const fadeOutStart = Math.max(0, dur - 3);
+
 // -stream_loop -1: loop the track; fade in 2s, fade out last 3s; volume ~14%
 // -shortest: end when the video ends
 const cmd = [
@@ -30,7 +38,7 @@ const cmd = [
   `-i ${JSON.stringify(MUSIC)}`,
   "-filter_complex",
   JSON.stringify(
-    "[1:a]afade=t=in:st=0:d=2,afade=t=out:st=55:d=3,volume=0.14[bg];" +
+    `[1:a]afade=t=in:st=0:d=2,afade=t=out:st=${fadeOutStart}:d=3,volume=0.14[bg];` +
     "[0:a][bg]amix=inputs=2:duration=shortest:dropout_transition=2[aout]",
   ),
   "-map 0:v:0 -map [aout]",
