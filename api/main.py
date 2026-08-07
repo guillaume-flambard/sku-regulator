@@ -106,6 +106,54 @@ def ask(req: AskRequest) -> dict:
         raise HTTPException(status_code=500, detail=f"LLM unavailable: {err}") from err
 
 
+@app.get("/api/graph")
+def graph() -> dict:
+    """Knowledge graph for the demo: products -> claims -> ingredients."""
+    nodes: list[dict] = []
+    edges: list[dict] = []
+    node_ids: set[tuple[str, int | str]] = set()
+
+    def add_node(kind: str, ident: str, label: str, meta: dict | None = None) -> str:
+        nid = f"{kind}:{ident}"
+        if nid not in node_ids:
+            node_ids.add(nid)
+            nodes.append({"id": nid, "kind": kind, "label": label, **(meta or {})})
+        return nid
+
+    with psycopg.connect(DSN) as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT p.sku, p.name, p.brand, p.country_code,
+                   c.policy_item_code, c.claim_text, c.status
+            FROM products p
+            JOIN product_claims pc ON pc.product_id = p.id
+            JOIN claims c ON c.id = pc.claim_id
+            """
+        )
+        for psku, pname, pbrand, pcountry, ccode, ctext, cstatus in cur.fetchall():
+            pid = add_node("product", psku, pname, {"brand": pbrand, "country": pcountry})
+            cid = add_node("claim", ccode, ctext[:90], {"status": cstatus})
+            edges.append({"source": pid, "target": cid, "type": "carries"})
+
+        cur.execute(
+            """
+            SELECT i.name, c.policy_item_code
+            FROM ingredients i
+            JOIN claim_ingredients ci ON ci.ingredient_id = i.id
+            JOIN claims c ON c.id = ci.claim_id
+            """
+        )
+        seen = set()
+        for iname, ccode in cur.fetchall():
+            iid = add_node("ingredient", iname, iname, {"category": "substance"})
+            cid = f"claim:{ccode}"
+            if cid in node_ids and (iid, cid) not in seen:
+                seen.add((iid, cid))
+                edges.append({"source": iid, "target": cid, "type": "in"})
+
+    return {"nodes": nodes, "edges": edges}
+
+
 @app.get("/api/anomalies")
 def anomalies() -> dict:
     with psycopg.connect(DSN) as conn, conn.cursor() as cur:

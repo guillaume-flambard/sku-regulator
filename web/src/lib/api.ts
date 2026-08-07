@@ -62,6 +62,26 @@ export interface Product {
   non_compliant: number;
 }
 
+export interface GraphNode {
+  id: string;
+  kind: "product" | "claim" | "ingredient";
+  label: string;
+  status?: string;
+  country?: string;
+  brand?: string;
+}
+
+export interface GraphEdge {
+  source: string;
+  target: string;
+  type: string;
+}
+
+export interface GraphData {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}
+
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, { cache: "no-store" });
   if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
@@ -93,4 +113,5 @@ export const api = {
     get<{ products: Product[] }>(
       `/api/products${country ? `?country=${encodeURIComponent(country)}` : ""}`,
     ),
+  graph: () => get<GraphData>("/api/graph"),
 };
