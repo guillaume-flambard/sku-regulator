@@ -35,16 +35,14 @@ KNOWN_CODES = {
 def _ensure_test_db() -> None:
     """Create the test database once, if missing."""
     # check existence first (autocommit so the SELECT doesn't open a txn)
-    with psycopg.connect(ADMIN_DSN, autocommit=True) as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT 1 FROM pg_database WHERE datname=%s", (TEST_DB,))
-            exists = cur.fetchone() is not None
+    with psycopg.connect(ADMIN_DSN, autocommit=True) as conn, conn.cursor() as cur:
+        cur.execute("SELECT 1 FROM pg_database WHERE datname=%s", (TEST_DB,))
+        exists = cur.fetchone() is not None
     if not exists:
         # CREATE DATABASE can't run inside a transaction, so use a fresh
         # autocommit connection.
-        with psycopg.connect(ADMIN_DSN, autocommit=True) as conn:
-            with conn.cursor() as cur:
-                cur.execute(f'CREATE DATABASE "{TEST_DB}"')
+        with psycopg.connect(ADMIN_DSN, autocommit=True) as conn, conn.cursor() as cur:
+            cur.execute(f'CREATE DATABASE "{TEST_DB}"')
     # schema
     schema = (REPO_ROOT / "store/schema.sql").read_text()
     with psycopg.connect(TEST_DSN) as conn:

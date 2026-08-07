@@ -123,8 +123,14 @@ def hybrid_search(query: str, top_k: int = TOP_K_DEFAULT) -> dict:
     "EPA DHA") so consumer phrasing matches the register's wording.
     """
     expanded = expand_query(query)
-    fts = fts_search(expanded, top_k=top_k * 3)
-    vec = vector_search(expanded, top_k=top_k * 3)
+    # FTS matches exact user wording (synonyms as an AND-clause would over-constrain);
+    # vector search embeds the expanded query so synonyms improve recall.
+    fts = fts_search(query, top_k=top_k * 3)
+    try:
+        vec = vector_search(expanded, top_k=top_k * 3)
+    except RuntimeError:
+        # Ollama down -> degrade to full-text only instead of failing the request
+        vec = []
 
     fused: dict[str, dict] = {}
     for source, results in (("fts", fts), ("vector", vec)):
