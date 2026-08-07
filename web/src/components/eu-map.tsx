@@ -1,48 +1,57 @@
 "use client";
 
+import { useState } from "react";
+import { ComposableMap, Geographies, Geography } from "react-simple-maps";
 import type { CountryVerdict } from "@/lib/api";
 
+// Bundled at build time — no runtime fetch, works fully offline.
+import topology from "@/data/countries-110m.json";
+
 /**
- * Self-contained EU map for the demo. Simplified country outlines for the
- * markets the register cares about — no external topojson download, works
- * offline, colored by the per-country claim verdict.
+ * EU market map built from real geography (world-atlas TopoJSON), bundled as a
+ * module so the demo works offline and never depends on static-file serving.
+ * Countries are colored by the per-country claim verdict.
  *
- * Coordinates are a rough 0..100 viewBox approximation of Europe.
+ * world-atlas uses ISO 3166-1 numeric ids (zero-padded or not — e.g. "040"
+ * Austria, "826" UK). We map the demo's alpha-2 market codes onto them. Malta
+ * ("470") is absent at the 110m resolution, so it is not drawn, but its
+ * verdict data still exists.
  */
 
-const PATHS: Record<string, string> = {
-  FR: "M41 20 Q50 18 54 22 L56 26 Q59 28 57 31 L60 34 Q59 38 55 39 L52 42 Q48 45 46 49 L43 47 Q40 44 39 40 L36 37 Q34 33 36 29 L38 26 Q39 22 41 20 Z",
-  DE: "M57 12 Q62 13 63 17 Q66 18 65 22 L66 26 Q63 28 61 27 L60 31 Q57 30 56 27 L54 24 Q53 20 55 17 Z",
-  ES: "M29 58 Q33 55 36 57 L37 62 Q34 64 31 63 L29 61 Z",
-  IT: "M65 45 Q68 46 67 50 Q68 54 65 57 Q64 53 63 49 Q64 47 65 45 Z",
-  NL: "M58 4 L61 5 L60 8 L58 8 Z",
-  GB: "M51 2 Q55 0 57 3 L56 7 Q52 8 50 6 Z",
-  PL: "M66 16 Q71 15 73 18 L74 23 Q70 25 68 23 L66 21 Z",
-  PT: "M25 58 Q27 57 28 60 L27 64 Q25 63 24 61 Z",
-  SE: "M67 0 Q71 1 71 6 Q69 9 67 8 Z",
-  AT: "M65 24 Q68 23 69 26 L67 29 Q64 28 65 24 Z",
-  BE: "M58 7 Q60 7 60 9 L58 10 Q57 9 58 7 Z",
+// world-atlas numeric id -> alpha-2 market code
+const ISO_NUMERIC_TO_CODE: Record<string, string> = {
+  "040": "AT", "056": "BE", "100": "BG", "191": "HR", "196": "CY",
+  "203": "CZ", "208": "DK", "233": "EE", "246": "FI", "250": "FR",
+  "276": "DE", "300": "GR", "348": "HU", "372": "IE", "380": "IT",
+  "428": "LV", "440": "LT", "442": "LU", "528": "NL", "616": "PL",
+  "620": "PT", "642": "RO", "703": "SK", "705": "SI", "724": "ES",
+  "752": "SE", "826": "GB",
 };
 
-const LABELS: Record<string, [number, number]> = {
-  FR: [47, 33],
-  DE: [61, 20],
-  ES: [32, 59],
-  IT: [65, 50],
-  NL: [60, 6],
-  GB: [54, 4],
-  PL: [70, 19],
-  PT: [27, 61],
-  SE: [69, 4],
-  AT: [66, 26],
-  BE: [59, 9],
+const NAME: Record<string, string> = {
+  AT: "Austria", BE: "Belgium", BG: "Bulgaria", HR: "Croatia", CY: "Cyprus",
+  CZ: "Czechia", DK: "Denmark", EE: "Estonia", FI: "Finland", FR: "France",
+  DE: "Germany", GR: "Greece", HU: "Hungary", IE: "Ireland", IT: "Italy",
+  LV: "Latvia", LT: "Lithuania", LU: "Luxembourg", NL: "Netherlands",
+  PL: "Poland", PT: "Portugal", RO: "Romania", SK: "Slovakia", SI: "Slovenia",
+  ES: "Spain", SE: "Sweden", GB: "United Kingdom",
 };
 
-const VERDICT_FILL: Record<CountryVerdict, { fill: string; stroke: string }> = {
-  allowed: { fill: "#d9efe4", stroke: "#0f6b4f" },
-  restricted: { fill: "#f7e6c3", stroke: "#b7791f" },
-  not_allowed: { fill: "#f5dcd6", stroke: "#b3402e" },
+const VERDICT_FILL: Record<CountryVerdict, string> = {
+  allowed: "#d9efe4",
+  restricted: "#f7e6c3",
+  not_allowed: "#f5dcd6",
 };
+
+const VERDICT_STROKE: Record<CountryVerdict, string> = {
+  allowed: "#0f6b4f",
+  restricted: "#b7791f",
+  not_allowed: "#b3402e",
+};
+
+const NEUTRAL_FILL = "#ecefe9";
+const NEUTRAL_STROKE = "#c8d1cc";
+const OTHER_FILL = "#f3f4f1";
 
 export function EuMap({
   verdicts,
@@ -51,42 +60,47 @@ export function EuMap({
   verdicts: Record<string, CountryVerdict>;
   activeCode?: string;
 }) {
-  const defaultFill = { fill: "#ecefe9", stroke: "#c8d1cc" };
+  const [hovered, setHovered] = useState<string | null>(null);
+
   return (
-    <svg
-      viewBox="20 0 60 70"
-      role="img"
-      aria-label="European Union market map with claim verdicts"
-      className="w-full h-auto"
+    <ComposableMap
+      projection="geoMercator"
+      projectionConfig={{ scale: 330, center: [15, 53] }}
+      width={400}
+      height={300}
+      style={{ width: "100%", height: "auto" }}
     >
-      {Object.entries(PATHS).map(([code, d]) => {
-        const v = verdicts[code];
-        const style = v ? VERDICT_FILL[v] : defaultFill;
-        const active = activeCode === code;
-        return (
-          <path
-            key={code}
-            d={d}
-            fill={style.fill}
-            stroke={active ? "#111" : style.stroke}
-            strokeWidth={active ? 1.4 : 0.8}
-            opacity={activeCode && !active ? 0.55 : 1}
-            className="transition-opacity"
-          />
-        );
-      })}
-      {Object.entries(LABELS).map(([code, [x, y]]) => (
-        <text
-          key={code}
-          x={x}
-          y={y}
-          fontSize="4.5"
-          textAnchor="middle"
-          className="fill-foreground/60 font-mono"
-        >
-          {code}
-        </text>
-      ))}
-    </svg>
+      <Geographies geography={topology}>
+        {({ geographies }) =>
+          geographies.map((geo) => {
+            const code = geo.id ? ISO_NUMERIC_TO_CODE[geo.id] : undefined;
+            const isMarket = Boolean(code);
+            const verdict = code ? verdicts[code] : undefined;
+            const active = code === activeCode;
+            const hover = code === hovered;
+
+            return (
+              <Geography
+                key={geo.rsmKey}
+                geography={geo}
+                fill={isMarket ? (verdict ? VERDICT_FILL[verdict] : NEUTRAL_FILL) : OTHER_FILL}
+                stroke={active ? "#111" : hover ? "#3a4a42" : isMarket ? (verdict ? VERDICT_STROKE[verdict] : NEUTRAL_STROKE) : "#e2e7e3"}
+                strokeWidth={active ? 1.4 : 0.7}
+                opacity={activeCode && !active ? 0.6 : 1}
+                onMouseEnter={() => code && setHovered(code)}
+                onMouseLeave={() => setHovered(null)}
+                style={{ default: { outline: "none" }, hover: { outline: "none" }, pressed: { outline: "none" } }}
+              >
+                {code && (
+                  <title>
+                    {NAME[code] ?? code} — {verdict ?? "not queried"}
+                  </title>
+                )}
+              </Geography>
+            );
+          })
+        }
+      </Geographies>
+    </ComposableMap>
   );
 }

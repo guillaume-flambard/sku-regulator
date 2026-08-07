@@ -12,13 +12,18 @@ test.describe("Explore — ask the register", () => {
     await expect(page.getByText("Authorised").first()).toBeVisible();
   });
 
-  test("market map reflects the selected claim verdict", async ({ page }) => {
-    // search a non-authorised probiotic claim
-    await page.getByRole("button", { name: /What claims can a glucomannan/ }).click();
+  test("market map renders real geography and reflects the verdict", async ({ page }) => {
+    // the map is a real topojson-backed SVG (world-atlas), not a hand-drawn sketch
+    expect(await page.locator("svg path").count()).toBeGreaterThan(100);
+
+    // default query (vitamin C, FR, authorised) -> France drawn green
+    await expect(page.locator('svg path[fill="#d9efe4"]')).toHaveCount(1, { timeout: 10_000 });
+
+    // a non-authorised probiotic claim -> France must turn red
+    await page.getByPlaceholder(/vitamin C supports/).fill("probiotic gut health");
+    await page.getByRole("button", { name: "Ask" }).click();
     await expect(page.getByText("Top matches", { exact: false })).toBeVisible({ timeout: 20_000 });
-    // the map's active market should reflect the actual verdict — not hardcoded allowed.
-    // We assert via the card badges: a non-authorised claim shows "Not allowed".
-    await expect(page.getByText("Non-authorised").first()).toBeVisible();
+    await expect(page.locator('svg path[fill="#f5dcd6"]')).toHaveCount(1, { timeout: 10_000 });
   });
 
   test("clicking a result selects it for the map", async ({ page }) => {
