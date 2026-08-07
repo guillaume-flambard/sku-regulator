@@ -13,12 +13,12 @@ import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const COMPOSED = resolve(ROOT, "video", "final", "composed.mp4");
-const MUSIC = resolve(ROOT, "audio", "Inspired-KevinMacLeod.mp3");
-const OUT = resolve(ROOT, "video", "final", "sku-regulator-demo.mp4");
+const COMPOSED = resolve(ROOT, "dist", "final", "composed.mp4");
+const MUSIC = resolve(ROOT, "dist", "audio", "Inspired-KevinMacLeod.mp3");
+const OUT = resolve(ROOT, "dist", "final", "sku-regulator-demo.mp4");
 
 if (!existsSync(COMPOSED)) throw new Error(`composed video missing: ${COMPOSED}. Run the Remotion render first.`);
-if (!existsSync(MUSIC)) throw new Error(`music missing: ${MUSIC}. Run scripts/fetch_music.mjs.`);
+if (!existsSync(MUSIC)) throw new Error(`music missing: ${MUSIC}. Run scripts/fetch-music.mjs.`);
 
 console.log("[assemble] mixing background music (fade in/out, low volume)…");
 

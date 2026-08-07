@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill, interpolate, useCurrentFrame, Easing } from "remotion";
-import type { Scene } from "../../scripts/demo-script";
+import type { Scene } from "../scripts/demo-script";
 import { Captions } from "./Captions";
 
 /**

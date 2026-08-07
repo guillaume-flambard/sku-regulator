@@ -45,7 +45,7 @@ demo-prod:
 	bash scripts/demo.sh --build
 
 demo-video:
-	bash scripts/render_demo.sh
+	bash video/scripts/render.sh
 
 health:
 	bash scripts/healthcheck.sh

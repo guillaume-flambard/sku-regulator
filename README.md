@@ -99,14 +99,16 @@ ingredients as an interactive force graph.
 
 ```bash
 make demo           # boot the app (db + api + web)
-make demo-video     # record → compose → mix → video/final/sku-regulator-demo.mp4
+make demo-video     # record → compose → mix → video/dist/final/sku-regulator-demo.mp4
 ```
 
-The pipeline records the 5 scenes in a real browser (Playwright `recordVideo`),
-composes them with animated titles, burned-in subtitles and Ken-Burns zooms
-(Remotion), and mixes a CC BY 4.0 background track (ffmpeg). The scene script
-(`scripts/demo-script.ts`) is the single source of truth, kept in sync with
-`docs/demo-runbook.md`. Details + music attribution: `docs/video-pipeline.md`.
+The video system lives in `video/` — a **standalone module external to the app
+core** (its own package.json, Remotion composition, scripts and artifacts). It
+records the 5 scenes in a real browser (Playwright `recordVideo`), composes them
+with animated titles, lower-third captions and Ken-Burns zooms (Remotion), and
+mixes a CC BY 4.0 background track (ffmpeg). The scene script
+(`video/scripts/demo-script.ts`) is the single source of truth, kept in sync
+with `docs/demo-runbook.md`. Details + music attribution: `video/docs/video-pipeline.md`.
 
 ## Tests
 

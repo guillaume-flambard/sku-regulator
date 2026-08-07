@@ -13,7 +13,7 @@ import { iris } from "@remotion/transitions/iris";
 import { fade } from "@remotion/transitions/fade";
 import type { TransitionPresentation } from "@remotion/transitions";
 
-import { SCENES, VIDEO } from "../../scripts/demo-script";
+import { SCENES, VIDEO } from "../scripts/demo-script";
 import { SceneOverlay } from "./SceneOverlay";
 import type { DemoVideoProps } from "./schema";
 

@@ -28,8 +28,8 @@ data/raw/*.json
 .ollama/
 *.model
 
-# Video pipeline artifacts
-video/
-!video/.gitkeep
-audio/
-!audio/.gitkeep
+# Video module artifacts (code is committed; binaries/recordings are not)
+video/node_modules/
+video/dist/
+video/public/raw/
+

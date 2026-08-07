@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig, Easing } from "remotion";
-import type { Scene } from "../../scripts/demo-script";
+import type { Scene } from "../scripts/demo-script";
 
 /**
  * Professional lower-third captions (burn-in).

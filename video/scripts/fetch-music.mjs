@@ -16,7 +16,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const OUT = resolve(ROOT, "audio", "Inspired-KevinMacLeod.mp3");
+const OUT = resolve(ROOT, "dist", "audio", "Inspired-KevinMacLeod.mp3");
 const SRC = "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Inspired.mp3";
 
 mkdirSync(dirname(OUT), { recursive: true });

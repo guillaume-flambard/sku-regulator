@@ -14,11 +14,11 @@ import { createRequire } from "node:module";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const require = createRequire(import.meta.url);
-// playwright lives under web/node_modules
-const { chromium } = require(resolve(ROOT, "web", "node_modules", "@playwright/test"));
+// playwright lives in this module's own node_modules (standalone video system)
+const { chromium } = require(resolve(ROOT, "node_modules", "@playwright/test"));
 
-const RAW_DIR = resolve(ROOT, "video", "raw");
-const BASE = "http://localhost:3000";
+const RAW_DIR = resolve(ROOT, "dist", "raw");
+const BASE = process.env.DEMO_BASE_URL ?? "http://localhost:3000";
 
 // Load the scene definitions from the TS source-of-truth.
 const scriptModule = await import(`${ROOT}/scripts/demo-script.ts`);
@@ -72,7 +72,6 @@ for (const scene of SCENES) {
   for (const step of scene.actions) {
     try {
       await runStep(page, step);
-      if (step.caption) console.log(`         • ${step.caption}`);
     } catch (err) {
       console.error(`         ✗ step failed (${step.type}: ${step.target}): ${err.message}`);
     }
@@ -91,5 +90,5 @@ for (const scene of SCENES) {
 
 await browser.close();
 
-console.log("[record] done — check video/raw/ for the .webm + preview PNGs");
+console.log("[record] done — check video/dist/raw/ for the .webm + preview PNGs");
 
