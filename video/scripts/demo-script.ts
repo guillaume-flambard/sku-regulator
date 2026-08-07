@@ -97,8 +97,8 @@ export const SCENES: Scene[] = [
   },
   {
     id: "close",
-    title: "The thing that doesn't exist yet",
-    subtitles: ["Five steps · real EU data · local AI · human sign-off", "Partially built"],
+    title: "Built for regulated products",
+    subtitles: ["Five steps · real EU data · local AI · human sign-off", "From the register to the label — compliance, end to end"],
     durationSec: 8,
     actions: [
       { type: "goto", target: "/", waitMs: 1500 },

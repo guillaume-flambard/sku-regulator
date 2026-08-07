@@ -128,11 +128,35 @@ export default function GraphPage() {
               nodeCanvasObject={(node: unknown, ctx) => {
                 const n = node as GNode & { x: number; y: number };
                 const label = n.label.length > 26 ? n.label.slice(0, 25) + "…" : n.label;
-                const fontSize = n.kind === "product" ? 11 : 9;
-                ctx.font = `${fontSize}px Inter, sans-serif`;
-                ctx.fillStyle = "rgba(24,33,29,0.85)";
+                const fontSize = n.kind === "product" ? 12 : 10;
+                ctx.font = `${fontSize}px "Geist Mono", monospace`;
+                // measure + draw a rounded backdrop so labels never collide with edges/nodes
+                const w = ctx.measureText(label).width;
+                ctx.fillStyle = "rgba(255,255,255,0.92)";
+                ctx.strokeStyle = "rgba(24,33,29,0.12)";
+                ctx.lineWidth = 1;
+                const bx = n.x - w / 2 - 4;
+                const by = n.y + 10;
+                const bw = w + 8;
+                const bh = fontSize + 8;
+                const r = 4;
+                ctx.beginPath();
+                ctx.moveTo(bx + r, by);
+                ctx.lineTo(bx + bw - r, by);
+                ctx.quadraticCurveTo(bx + bw, by, bx + bw, by + r);
+                ctx.lineTo(bx + bw, by + bh - r);
+                ctx.quadraticCurveTo(bx + bw, by + bh, bx + bw - r, by + bh);
+                ctx.lineTo(bx + r, by + bh);
+                ctx.quadraticCurveTo(bx, by + bh, bx, by + bh - r);
+                ctx.lineTo(bx, by + r);
+                ctx.quadraticCurveTo(bx, by, bx + r, by);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = "rgba(24,33,29,0.9)";
                 ctx.textAlign = "center";
-                ctx.fillText(label, n.x, n.y + 16);
+                ctx.textBaseline = "middle";
+                ctx.fillText(label, n.x, by + fontSize / 2 + 4);
               }}
               linkColor={() => "rgba(24,33,29,0.15)"}
               linkDirectionalParticles={1}

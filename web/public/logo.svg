@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0f6b4f"/>
+      <stop offset="1" stop-color="#00513a"/>
+    </linearGradient>
+  </defs>
+  <!-- shield / registry badge -->
+  <path d="M32 4 56 13v18c0 14.4-10 24.6-24 29C18 55.6 8 45.4 8 31V13L32 4Z" fill="url(#g)"/>
+  <!-- data rows (the register) -->
+  <rect x="20" y="24" width="24" height="3.2" rx="1.6" fill="#ffffff" opacity="0.85"/>
+  <rect x="20" y="31" width="17" height="3.2" rx="1.6" fill="#ffffff" opacity="0.6"/>
+  <rect x="20" y="38" width="21" height="3.2" rx="1.6" fill="#ffffff" opacity="0.6"/>
+  <!-- compliance check -->
+  <path d="m36 46 5.5 5.5L52.5 40" stroke="#a1f3cf" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

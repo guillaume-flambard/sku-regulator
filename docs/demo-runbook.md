@@ -60,8 +60,8 @@ Go to **/graph**.
 
 ### 5. Close (5:15–6:00)
 - Return to the **Pipeline** page.
-- One line: *"Five steps, real EU data, local AI, human sign-off. The thing that
-  doesn't exist yet — partially built."*
+- One line: *"Five steps, real EU data, local AI, human sign-off — from the
+  register to the label, compliance end to end."*
 
 ## Failure drills
 

@@ -1,8 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ShieldCheck } from "@phosphor-icons/react";
 
 const NAV = [
   { href: "/", label: "Pipeline" },
@@ -14,22 +14,28 @@ const NAV = [
 export function SiteHeader() {
   const pathname = usePathname();
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-line bg-surface">
+    <nav className="sticky top-0 z-50 w-full border-b border-line bg-surface/95 backdrop-blur-sm">
       <div className="mx-auto flex h-16 max-w-container-max items-center justify-between px-gutter">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-container text-white">
-              <ShieldCheck size={18} weight="fill" />
-            </div>
-            <div className="leading-tight">
-              <div className="text-headline-md font-bold tracking-tight text-primary">sku-regulator</div>
-              <div className="-mt-0.5 block font-data-mono text-[10px] uppercase tracking-wider text-muted">
-                EU health-claims intelligence
-              </div>
-            </div>
-          </Link>
-        </div>
-        <div className="flex items-center gap-3 md:gap-6">
+        <Link href="/" className="group flex items-center gap-3">
+          {/* real logo mark (public/logo.svg) */}
+          <Image
+            src="/logo.svg"
+            alt="sku-regulator"
+            width={32}
+            height={32}
+            className="h-8 w-8 drop-shadow-sm transition-transform group-hover:scale-105"
+          />
+          <div className="flex flex-col leading-none">
+            <span className="font-display-h1 text-[17px] font-bold tracking-tight text-ink">
+              sku-regulator
+            </span>
+            <span className="mt-0.5 font-data-mono text-[9px] uppercase tracking-[0.14em] text-muted">
+              EU health-claims intelligence
+            </span>
+          </div>
+        </Link>
+
+        <nav className="flex items-center gap-1 md:gap-2">
           {NAV.map((item) => {
             const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
             const hideMobile = item.label === "Portfolio";
@@ -37,17 +43,20 @@ export function SiteHeader() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`pb-1 text-body-base font-semibold transition-colors ${
+                aria-current={active ? "page" : undefined}
+                className={`rounded-full px-3 py-1.5 text-body-sm font-semibold transition-colors ${
                   hideMobile ? "hidden md:inline" : ""
                 } ${
-                  active ? "border-b-2 border-primary text-primary" : "text-muted hover:text-primary"
+                  active
+                    ? "bg-sage-soft text-sage"
+                    : "text-muted hover:bg-surface-container-low hover:text-ink"
                 }`}
               >
                 {item.label}
               </Link>
             );
           })}
-        </div>
+        </nav>
       </div>
     </nav>
   );
