@@ -9,7 +9,5 @@ export default function globalSetup() {
   const root = path.resolve(__dirname, "..", "..");
   const venvPython = path.join(root, ".venv", "bin", "python");
   const seed = path.join(root, "store", "demo_enrich.py");
-  // eslint-disable-next-line no-console
-  console.log("[e2e] re-seeding demo data…");
-  execSync(`"${venvPython}" "${seed}"`, { cwd: root, stdio: "inherit" });
+  console.log("[e2e] re-seeding demo data…");  execSync(`"${venvPython}" "${seed}"`, { cwd: root, stdio: "inherit" });
 }
