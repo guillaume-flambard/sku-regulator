@@ -17,8 +17,7 @@ import {
   ListChecks,
 } from "@phosphor-icons/react";
 
-import { api, type Stats } from "@/lib/api";
-import { Eyebrow } from "@/components/badges";
+import type { Stats } from "@/lib/api";import { Eyebrow } from "@/components/badges";
 
 const STAGES = [
   {
@@ -113,7 +112,7 @@ function StagePanel({
         </div>
         <div>
           <h3 className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted">
-            How it's built
+            How it&apos;s built
           </h3>
           <p className="text-[15px] leading-relaxed text-foreground/90">{stage.how}</p>
         </div>

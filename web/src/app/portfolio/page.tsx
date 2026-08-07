@@ -1,12 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   ShieldCheck,
   XCircle,
   Flag,
-  CaretLeft,
-  CaretRight,
   Check,
   Package,
   MapPin,
@@ -48,9 +47,9 @@ export default function Portfolio() {
             <span className="font-semibold tracking-tight">sku-regulator</span>
           </div>
           <nav className="flex items-center gap-6 text-sm text-muted">
-            <a href="/" className="hover:text-foreground">Pipeline</a>
-            <a href="/explore" className="hover:text-foreground">Explore</a>
-            <a href="/portfolio" className="text-foreground">Portfolio</a>
+            <Link href="/" className="hover:text-foreground">Pipeline</Link>
+            <Link href="/explore" className="hover:text-foreground">Explore</Link>
+            <Link href="/portfolio" className="text-foreground">Portfolio</Link>
           </nav>
         </div>
       </header>

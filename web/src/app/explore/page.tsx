@@ -1,15 +1,13 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { useState, useCallback, useEffect, useMemo } from "react";
+import Link from "next/link";
+import { motion } from "motion/react";
 import {
   MagnifyingGlass,
   ArrowRight,
   ArrowLeft,
   ShieldCheck,
-  XCircle,
-  CaretRight,
-  CaretLeft,
   Sparkle,
   Globe,
   Hash,
@@ -17,7 +15,7 @@ import {
   CircleNotch,
 } from "@phosphor-icons/react";
 
-import { api, type ClaimResult, type AskResult, type CountryVerdict, type Country } from "@/lib/api";
+import { api, type ClaimResult, type AskResult } from "@/lib/api";
 import { StatusBadge, CountryBadge, Eyebrow } from "@/components/badges";
 import { EuMap } from "@/components/eu-map";
 
@@ -32,16 +30,11 @@ type View = "results" | "answer";
 export default function Explore() {
   const [query, setQuery] = useState(EXAMPLES[0].q);
   const [country, setCountry] = useState("FR");
-  const [countries, setCountries] = useState<Country[]>([]);
   const [results, setResults] = useState<ClaimResult[]>([]);
   const [ask, setAsk] = useState<AskResult | null>(null);
   const [view, setView] = useState<View>("results");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    api.countries().then((d) => setCountries(d.countries)).catch(() => {});
-  }, []);
 
   const runSearch = useCallback(async (q: string, c: string) => {
     setLoading(true);
@@ -62,6 +55,8 @@ export default function Explore() {
   }, []);
 
   useEffect(() => {
+    // Initial data fetch on mount is a legitimate external-system sync.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     runSearch(EXAMPLES[0].q, "FR");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -70,11 +65,6 @@ export default function Explore() {
     e?.preventDefault();
     runSearch(query, country);
   };
-
-  const verdicts: Record<string, CountryVerdict> = {};
-  results.forEach((r) => {
-    if (r.country_status) verdicts[r.policy_item_code] = r.country_status;
-  });
 
   return (
     <div className="min-h-[100dvh]">
@@ -87,9 +77,9 @@ export default function Explore() {
             <span className="font-semibold tracking-tight">sku-regulator</span>
           </div>
           <nav className="flex items-center gap-6 text-sm text-muted">
-            <a href="/" className="hover:text-foreground">Pipeline</a>
-            <a href="/explore" className="text-foreground">Explore</a>
-            <a href="/portfolio" className="hover:text-foreground">Portfolio</a>
+            <Link href="/" className="hover:text-foreground">Pipeline</Link>
+            <Link href="/explore" className="text-foreground">Explore</Link>
+            <Link href="/portfolio" className="hover:text-foreground">Portfolio</Link>
           </nav>
         </div>
       </header>
@@ -97,7 +87,7 @@ export default function Explore() {
       <main className="mx-auto max-w-6xl px-6 py-12">
         <Eyebrow>Ask the register</Eyebrow>
         <h1 className="mt-3 max-w-2xl text-3xl font-semibold tracking-tight md:text-4xl">
-          "Can I put this on the label?"
+          &ldquo;Can I put this on the label?&rdquo;
         </h1>
         <p className="mt-2 max-w-2xl text-muted">
           Ask in plain language. The answer is grounded in the real EU register,
@@ -182,11 +172,11 @@ export default function Explore() {
                     )}
                   </div>
                   {results.map((r) => (
-                    <ResultCard key={r.policy_item_code} r={r} country={country} />
+                    <ResultCard key={r.policy_item_code} r={r} />
                   ))}
                 </div>
               ) : ask && view === "answer" ? (
-                <AnswerCard ask={ask} onBack={() => setView("results")} />
+                <AnswerCard key={ask.answer} ask={ask} onBack={() => setView("results")} />
               ) : null}
             </div>
 
@@ -215,7 +205,7 @@ export default function Explore() {
   );
 }
 
-function ResultCard({ r, country }: { r: ClaimResult; country: string }) {
+function ResultCard({ r }: { r: ClaimResult }) {
   return (
     <div className="rounded-2xl border border-line bg-white p-4 transition-shadow hover:shadow-sm">
       <div className="flex flex-wrap items-center gap-2">
@@ -240,18 +230,22 @@ function ResultCard({ r, country }: { r: ClaimResult; country: string }) {
 }
 
 function AnswerCard({ ask, onBack }: { ask: AskResult; onBack: () => void }) {
-  const [lines, setLines] = useState<string[]>([]);
+  const [revealed, setRevealed] = useState(0);
+  const words = useMemo(() => ask.answer.split(" "), [ask.answer]);
   useEffect(() => {
-    setLines([]);
-    const words = ask.answer.split(" ");
-    let i = 0;
     const t = setInterval(() => {
-      i += 1;
-      setLines(ask.answer.split(" ").slice(0, i * 6));
-      if (i * 6 >= ask.answer.split(" ").length) clearInterval(t);
-    }, 60);
+      setRevealed((n) => {
+        if (n >= words.length) {
+          clearInterval(t);
+          return n;
+        }
+        return n + 3;
+      });
+    }, 45);
     return () => clearInterval(t);
-  }, [ask.answer]);
+  }, [words.length]);
+
+  const shown = words.slice(0, revealed).join(" ");
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-accent/25 bg-white">
@@ -266,8 +260,10 @@ function AnswerCard({ ask, onBack }: { ask: AskResult; onBack: () => void }) {
             <Sparkle size={14} weight="fill" />
           </div>
           <p className="text-[15px] leading-relaxed text-foreground/90">
-            {lines.join(" ")}
-            <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-accent align-middle" />
+            {shown}
+            {revealed < words.length && (
+              <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-accent align-middle" />
+            )}
           </p>
         </div>
       </div>
