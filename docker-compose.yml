@@ -1,0 +1,20 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: sku-regulator-db
+    environment:
+      POSTGRES_USER: sku
+      POSTGRES_PASSWORD: sku
+      POSTGRES_DB: sku_regulator
+    ports:
+      - "55432:5432"
+    volumes:
+      - sku_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sku -d sku_regulator"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  sku_pgdata:

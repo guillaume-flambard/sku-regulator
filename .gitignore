@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+npm-debug.log*
+
+# Data (raw EU payload is ~21MB, parsed ~4MB — keep parsed, ignore raw in VCS)
+data/raw/*.json
+!data/raw/.gitkeep
+
+# Env / secrets
+.env
+.env.local
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Ollama / ML cache
+.ollama/
+*.model
