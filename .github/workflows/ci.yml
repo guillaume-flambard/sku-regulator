@@ -135,9 +135,9 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Seed demo DB
+      - name: Seed demo DB (schema + claims, no embeddings yet)
         run: |
-          python store/seed.py
+          python store/seed.py --no-embeddings
           python store/demo_enrich.py
         env:
           SKU_DB_DSN: "host=localhost port=55432 dbname=sku_regulator user=sku password=sku"
@@ -150,10 +150,12 @@ jobs:
           ollama pull nomic-embed-text
           ollama pull llama3.2:3b
 
-      - name: RAG safety tests (real LLM)
+      - name: Compute embeddings + RAG safety tests (real LLM)
         env:
           SKU_DB_DSN: "host=localhost port=55432 dbname=sku_regulator user=sku password=sku"
-        run: pytest -m "integration and slow" tests/test_rag_safety.py tests/test_integration_db.py::test_vector_search_finds_semantic_match
+        run: |
+          python store/seed.py --embeddings-only
+          pytest -m "integration and slow" tests/test_rag_safety.py tests/test_integration_db.py::test_vector_search_finds_semantic_match
 
       - name: Start API
         env:

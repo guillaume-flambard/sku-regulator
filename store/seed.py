@@ -295,17 +295,46 @@ def load_demo_products(conn: psycopg.Connection) -> None:
     print(f"[seed] {len(demo)} demo SKUs loaded")
 
 
+def backfill_embeddings(conn: psycopg.Connection) -> int:
+    """Compute embeddings for claims that don't have one yet (idempotent)."""
+    import ollama
+
+    with conn.cursor() as cur:
+        cur.execute("SELECT id, policy_item_code, claim_text, health_relationship FROM claims WHERE embedding IS NULL")
+        rows = cur.fetchall()
+
+    if not rows:
+        print("[seed] no claims missing embeddings")
+        return 0
+
+    batch_size = 16
+    for i in range(0, len(rows), batch_size):
+        batch = rows[i : i + batch_size]
+        texts = [f"{r[2] or ''} — {r[3] or ''}" for r in batch]
+        vecs = ollama.embed(model="nomic-embed-text", input=texts)["embeddings"]
+        with conn.cursor() as cur:
+            for (cid, _code, _t, _h), vec in zip(batch, vecs, strict=True):
+                cur.execute("UPDATE claims SET embedding=%s WHERE id=%s", (vec, cid))
+        conn.commit()
+    print(f"[seed] computed {len(rows)} embeddings (Ollama nomic-embed-text)")
+    return len(rows)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dsn", default=DEFAULT_DSN)
-    parser.add_argument("--no-embeddings", action="store_true", help="skip Ollama embeddings")
+    parser.add_argument("--no-embeddings", action="store_true", help="skip Ollama embeddings during load")
+    parser.add_argument("--embeddings-only", action="store_true", help="only backfill missing embeddings")
     args = parser.parse_args()
 
     with psycopg.connect(args.dsn) as conn:
-        apply_schema(conn)
-        load_countries(conn)
-        load_claims(conn, with_embeddings=not args.no_embeddings)
-        load_demo_products(conn)
+        if args.embeddings_only:
+            backfill_embeddings(conn)
+        else:
+            apply_schema(conn)
+            load_countries(conn)
+            load_claims(conn, with_embeddings=not args.no_embeddings)
+            load_demo_products(conn)
 
     print("[seed] done")
     return 0
