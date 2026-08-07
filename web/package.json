@@ -7,10 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "video:render": "remotion render remotion/index.tsx DemoVideo ../video/final/composed.mp4"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
+    "@remotion/cli": "^4.0.506",
+    "@remotion/player": "^4.0.506",
     "d3-color": "3.1.0",
     "motion": "^13.0.0",
     "next": "16.3.0",
@@ -18,6 +21,7 @@
     "react-dom": "19.2.8",
     "react-force-graph-2d": "^1.29.1",
     "react-simple-maps": "^3.0.0",
+    "remotion": "^4.0.506",
     "topojson-client": "^3.1.0"
   },
   "devDependencies": {

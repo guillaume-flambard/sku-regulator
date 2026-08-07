@@ -95,6 +95,19 @@ lets you ask the register in plain language; **Portfolio** shows SKU verdicts
 and the human-in-the-loop queue; **Graph** renders products, claims and
 ingredients as an interactive force graph.
 
+### Demo video (LLM-driven pipeline)
+
+```bash
+make demo           # boot the app (db + api + web)
+make demo-video     # record → compose → mix → video/final/sku-regulator-demo.mp4
+```
+
+The pipeline records the 5 scenes in a real browser (Playwright `recordVideo`),
+composes them with animated titles, burned-in subtitles and Ken-Burns zooms
+(Remotion), and mixes a CC BY 4.0 background track (ffmpeg). The scene script
+(`scripts/demo-script.ts`) is the single source of truth, kept in sync with
+`docs/demo-runbook.md`. Details + music attribution: `docs/video-pipeline.md`.
+
 ## Tests
 
 Four layers, each runnable on its own (see `Makefile`):

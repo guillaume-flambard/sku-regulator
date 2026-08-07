@@ -9,6 +9,7 @@
 #
 #   make demo              boot everything (db + seed + api + web)
 #   make demo-prod         boot with a production web build (stable for demos)
+#   make demo-video        LLM-driven demo video pipeline (record + compose + mix)
 #   make health            pre-demo health check
 #   make reseed            reset the demo data (anomaly queue etc.)
 #   make audit             SBOM/vuln scan (pip-audit + npm audit)
@@ -17,7 +18,7 @@
 PYTHON   ?= .venv/bin/python
 E2E_DIR  := web
 
-.PHONY: test-unit test-integration test-api test-python test-e2e test demo demo-prod health reseed audit lint
+.PHONY: test-unit test-integration test-api test-python test-e2e test demo demo-prod demo-video health reseed audit lint
 
 test-unit:
 	$(PYTHON) -m pytest -m "not integration and not slow" tests
@@ -42,6 +43,9 @@ demo:
 
 demo-prod:
 	bash scripts/demo.sh --build
+
+demo-video:
+	bash scripts/render_demo.sh
 
 health:
 	bash scripts/healthcheck.sh

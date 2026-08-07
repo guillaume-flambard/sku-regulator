@@ -27,3 +27,9 @@ data/raw/*.json
 # Ollama / ML cache
 .ollama/
 *.model
+
+# Video pipeline artifacts
+video/
+!video/.gitkeep
+audio/
+!audio/.gitkeep
