@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   ShieldCheck,
@@ -9,6 +9,7 @@ import {
   Check,
   Package,
   MapPin,
+  ArrowCounterClockwise,
 } from "@phosphor-icons/react";
 
 import { api, type Anomaly, type Product } from "@/lib/api";
@@ -19,6 +20,9 @@ export default function Portfolio() {
   const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
   const [country, setCountry] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ id: number; label: string } | null>(null);
+  const [resolving, setResolving] = useState<number | null>(null);
 
   useEffect(() => {
     Promise.all([api.products(), api.anomalies()])
@@ -26,15 +30,42 @@ export default function Portfolio() {
         setProducts(p.products);
         setAnomalies(a.anomalies);
       })
+      .catch((e) => setError(e instanceof Error ? e.message : "Failed to load portfolio"))
       .finally(() => setLoading(false));
   }, []);
 
   const filtered = country ? products.filter((p) => p.country_code === country) : products;
 
-  const resolve = async (id: number) => {
-    await api.resolveAnomaly(id);
+  const resolve = useCallback(async (id: number) => {
+    setResolving(id);
+    setError(null);
+    const removed = anomalies.find((x) => x.id === id);
+    // optimistic: remove now, restore on error or undo
     setAnomalies((a) => a.filter((x) => x.id !== id));
-  };
+    setToast({ id, label: "Anomaly resolved" });
+    try {
+      await api.resolveAnomaly(id);
+    } catch (e) {
+      if (removed) setAnomalies((a) => [removed, ...a]);
+      setError(e instanceof Error ? e.message : "Could not resolve the anomaly");
+    } finally {
+      setResolving(null);
+    }
+  }, [anomalies]);
+
+  const undo = useCallback(async (id: number) => {
+    setToast(null);
+    setError(null);
+    try {
+      await api.undoAnomaly(id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not undo");
+    }
+    // refresh both lists so the UI matches the DB
+    const [p, a] = await Promise.all([api.products(), api.anomalies()]);
+    setProducts(p.products);
+    setAnomalies(a.anomalies);
+  }, []);
 
   return (
     <div className="min-h-[100dvh]">
@@ -50,6 +81,7 @@ export default function Portfolio() {
             <Link href="/" className="hover:text-foreground">Pipeline</Link>
             <Link href="/explore" className="hover:text-foreground">Explore</Link>
             <Link href="/portfolio" className="text-foreground">Portfolio</Link>
+            <Link href="/graph" className="hover:text-foreground">Graph</Link>
           </nav>
         </div>
       </header>
@@ -87,6 +119,16 @@ export default function Portfolio() {
               <div key={i} className="h-40 animate-pulse rounded-2xl border border-line bg-white" />
             ))}
           </div>
+        ) : error && products.length === 0 ? (
+          <div role="alert" className="mt-8 flex items-center gap-3 rounded-xl border border-danger/30 bg-[#fbeae6] px-4 py-3 text-sm text-danger">
+            <span className="flex-1">{error} — check that the pipeline API on :8000 is running.</span>
+            <button
+              onClick={() => window.location.reload()}
+              className="rounded-full border border-danger/40 bg-white px-3 py-1 text-xs font-medium text-danger hover:bg-danger/5"
+            >
+              Reload
+            </button>
+          </div>
         ) : (
           <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filtered.map((p) => (
@@ -107,9 +149,9 @@ export default function Portfolio() {
                 </div>
                 <div className="mt-4 flex items-center justify-between border-t border-line pt-3">
                   <div className="flex items-center gap-1.5 text-sm">
-                    {p.non_compliant > 0 ? (
+                    {p.non_compliant > 0 || p.review > 0 ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-[#fbeae6] px-2.5 py-0.5 text-xs font-medium text-danger">
-                        <XCircle size={13} weight="fill" /> At risk
+                        <XCircle size={13} weight="fill" /> Needs review
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-medium text-accent">
@@ -117,7 +159,7 @@ export default function Portfolio() {
                       </span>
                     )}
                   </div>
-                  <Confidence value={0.97} />
+                  {p.confidence != null && <Confidence value={p.confidence} />}
                 </div>
               </div>
             ))}
@@ -157,16 +199,19 @@ export default function Portfolio() {
                       {a.claim_code && (
                         <code className="rounded bg-accent-soft px-1.5 py-0.5 font-mono text-xs text-accent">{a.claim_code}</code>
                       )}
+                      <span className="rounded-full bg-line px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted">
+                        {a.severity}
+                      </span>
                     </div>
                     <p className="mt-0.5 text-sm text-muted">{a.reason}</p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    <Confidence value={a.severity === "high" ? 0.51 : 0.61} />
                     <button
                       onClick={() => resolve(a.id)}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-xs font-medium text-background transition-transform hover:-translate-y-px"
+                      disabled={resolving === a.id}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-xs font-medium text-background transition-transform hover:-translate-y-px disabled:opacity-60"
                     >
-                      <Check size={14} /> Resolve
+                      <Check size={14} /> {resolving === a.id ? "Resolving…" : "Resolve"}
                     </button>
                   </div>
                 </div>
@@ -174,6 +219,19 @@ export default function Portfolio() {
             </div>
           )}
         </div>
+
+        {/* undo toast */}
+        {toast && (
+          <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full border border-line bg-foreground px-4 py-2.5 text-sm text-background shadow-lg">
+            <span>{toast.label}</span>
+            <button
+              onClick={() => undo(toast.id)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-background/30 px-3 py-1 text-xs font-medium transition-colors hover:bg-background/10"
+            >
+              <ArrowCounterClockwise size={13} /> Undo
+            </button>
+          </div>
+        )}
       </main>
     </div>
   );

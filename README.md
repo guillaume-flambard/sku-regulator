@@ -82,6 +82,26 @@ lets you ask the register in plain language; **Portfolio** shows SKU verdicts
 and the human-in-the-loop queue; **Graph** renders products, claims and
 ingredients as an interactive force graph.
 
+## Tests
+
+Three layers, each runnable on its own (see `Makefile`):
+
+```bash
+pip install -r requirements-dev.txt
+
+make test-unit         # parser + ingredient detection + RRF fusion (no infra)
+make test-integration  # schema + retrieval against the isolated test DB
+make test-api          # FastAPI endpoints (health, search, ask, products, anomalies)
+make test-e2e          # Playwright: home, explore, portfolio, graph (needs :8000 + :3000)
+make test              # everything
+```
+
+- **Unit tests** run without any infrastructure (they mock the DB).
+- **Integration + API tests** use a dedicated `sku_regulator_test` database
+  (created automatically) so the live demo database is never touched.
+- **E2E** re-seeds the demo data before running, so resolve/undo and the
+  anomaly queue are deterministic.
+
 ## Notes on scope
 
 - **One real source.** The EU register is the foundation. A production system

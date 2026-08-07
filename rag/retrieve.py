@@ -27,6 +27,10 @@ DSN = os.environ.get(
 
 TOP_K_DEFAULT = 5
 
+# vector-only hits below this cosine score are treated as noise, not matches.
+# Tuned on the full register: real queries score 0.65+, gibberish tops out ~0.55.
+VECTOR_MIN_SCORE = 0.6
+
 
 def _connect():
     return psycopg.connect(DSN)
@@ -86,7 +90,13 @@ def vector_search(query: str, top_k: int = TOP_K_DEFAULT) -> list[dict]:
 
 
 def hybrid_search(query: str, top_k: int = TOP_K_DEFAULT) -> dict:
-    """Fuse FTS + vector via reciprocal-rank fusion (RRF)."""
+    """Fuse FTS + vector via reciprocal-rank fusion (RRF).
+
+    A fused result is only kept when at least one retriever is confident:
+      - full-text hits always qualify (an exact wording match is meaningful),
+      - vector-only hits require a cosine score above VECTOR_MIN_SCORE.
+    This keeps meaningless queries from surfacing low-score noise.
+    """
     fts = fts_search(query, top_k=top_k * 3)
     vec = vector_search(query, top_k=top_k * 3)
 
@@ -94,8 +104,11 @@ def hybrid_search(query: str, top_k: int = TOP_K_DEFAULT) -> dict:
     for source, results in (("fts", fts), ("vector", vec)):
         for rank, rec in enumerate(results):
             code = rec["policy_item_code"]
+            score = rec["score"] or 0.0
+            if source == "vector" and score < VECTOR_MIN_SCORE:
+                continue
             entry = fused.setdefault(code, {**rec, "matches": {}})
-            entry["matches"][source] = round(rec["score"] or 0.0, 4)
+            entry["matches"][source] = round(score, 4)
             entry["matches"]["_rank"] = entry["matches"].get("_rank", 0) + 1 / (60 + rank)
 
     ranked = sorted(

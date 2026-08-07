@@ -162,6 +162,7 @@ export default function Home({ stats }: { stats: Stats | null }) {
             <a href="#pipeline" className="hover:text-foreground">Pipeline</a>
             <a href="/explore" className="hover:text-foreground">Explore</a>
             <a href="/portfolio" className="hover:text-foreground">Portfolio</a>
+            <a href="/graph" className="hover:text-foreground">Graph</a>
           </nav>
         </div>
       </header>

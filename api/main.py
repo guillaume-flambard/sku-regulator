@@ -18,7 +18,7 @@ import os
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from rag.answer import answer_question
 from rag.retrieve import country_lookup, hybrid_search
@@ -42,8 +42,8 @@ app.add_middleware(
 
 
 class AskRequest(BaseModel):
-    question: str
-    country: str = "FR"
+    question: str = Field(min_length=1, description="The compliance question")
+    country: str = Field(default="FR", min_length=2, max_length=2)
 
 
 @app.get("/api/health")
@@ -87,6 +87,8 @@ def countries() -> dict:
 
 @app.get("/api/claims")
 def claims(q: str, country: str = "FR", top_k: int = 5) -> dict:
+    if not q.strip():
+        return {"query": q, "country": country, "results": []}
     try:
         retrieval = hybrid_search(q, top_k=top_k)
     except RuntimeError as err:
@@ -155,7 +157,7 @@ def graph() -> dict:
 
 
 @app.get("/api/anomalies")
-def anomalies() -> dict:
+def anomalies(status: str = "open") -> dict:
     with psycopg.connect(DSN) as conn, conn.cursor() as cur:
         cur.execute(
             """
@@ -164,9 +166,11 @@ def anomalies() -> dict:
             FROM anomalies a
             LEFT JOIN claims c ON c.id = a.claim_id
             LEFT JOIN products p ON p.id = a.product_id
+            WHERE a.status = %s
             ORDER BY a.created_at DESC
             LIMIT 50
-            """
+            """,
+            (status,),
         )
         rows = cur.fetchall()
     return {
@@ -198,12 +202,26 @@ def resolve_anomaly(anomaly_id: int) -> dict:
     return {"ok": True, "id": anomaly_id}
 
 
+@app.post("/api/anomalies/{anomaly_id}/undo")
+def undo_anomaly(anomaly_id: int) -> dict:
+    """Reopen a resolved anomaly (undo)."""
+    with psycopg.connect(DSN) as conn, conn.cursor() as cur:
+        cur.execute(
+            "UPDATE anomalies SET status='open', resolved_at=NULL WHERE id=%s",
+            (anomaly_id,),
+        )
+        conn.commit()
+    return {"ok": True, "id": anomaly_id}
+
+
 @app.get("/api/products")
 def products(country: str | None = None) -> dict:
     q = """
         SELECT p.sku, p.name, p.brand, p.country_code,
                count(pc.id) FILTER (WHERE pc.verdict='compliant') AS compliant,
-               count(pc.id) FILTER (WHERE pc.verdict='non_compliant') AS non_compliant
+               count(pc.id) FILTER (WHERE pc.verdict='non_compliant') AS non_compliant,
+               count(pc.id) FILTER (WHERE pc.verdict='review') AS review,
+               round(avg(pc.confidence)::numeric, 3) AS confidence
         FROM products p
         LEFT JOIN product_claims pc ON pc.product_id = p.id
         WHERE (%s::text IS NULL OR p.country_code = %s)
@@ -222,6 +240,8 @@ def products(country: str | None = None) -> dict:
                 "country_code": r[3],
                 "compliant": r[4],
                 "non_compliant": r[5],
+                "review": r[6],
+                "confidence": float(r[7]) if r[7] is not None else None,
             }
             for r in rows
         ]

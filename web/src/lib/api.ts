@@ -60,6 +60,8 @@ export interface Product {
   country_code: string;
   compliant: number;
   non_compliant: number;
+  review: number;
+  confidence: number | null;
 }
 
 export interface GraphNode {
@@ -109,6 +111,7 @@ export const api = {
     post<AskResult>("/api/ask", { question, country }),
   anomalies: () => get<{ anomalies: Anomaly[] }>("/api/anomalies"),
   resolveAnomaly: (id: number) => post(`/api/anomalies/${id}/resolve`, {}),
+  undoAnomaly: (id: number) => post(`/api/anomalies/${id}/undo`, {}),
   products: (country?: string) =>
     get<{ products: Product[] }>(
       `/api/products${country ? `?country=${encodeURIComponent(country)}` : ""}`,
