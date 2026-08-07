@@ -13,7 +13,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-pytestmark = pytest.mark.integration
+pytestmark = [pytest.mark.integration, pytest.mark.slow]
 
 # (question, expected on-topic keyword, expected authorised code when present)
 GOLD = [
@@ -24,7 +24,24 @@ GOLD = [
 ]
 
 
-def test_top_hit_is_on_topic(retrieve_module):
+def _ollama_available() -> bool:
+    import urllib.request
+    try:
+        with urllib.request.urlopen("http://localhost:11434/api/tags", timeout=2):
+            return True
+    except Exception:
+        return False
+
+
+@pytest.fixture(scope="module")
+def vector_ready():
+    """Skip checks that need the vector path when Ollama is unavailable."""
+    if not _ollama_available():
+        pytest.skip("Ollama unavailable — retrieval-quality checks need vector search")
+    return True
+
+
+def test_top_hit_is_on_topic(retrieve_module, vector_ready):
     for question, keyword, _ in GOLD:
         res = retrieve_module.hybrid_search(question, top_k=5)
         assert res["results"], f"no results for '{question}'"
@@ -32,7 +49,7 @@ def test_top_hit_is_on_topic(retrieve_module):
         assert keyword in top_text, f"top hit for '{question}' is off-topic: {top_text[:100]}"
 
 
-def test_authorised_code_present_in_top_k(retrieve_module):
+def test_authorised_code_present_in_top_k(retrieve_module, vector_ready):
     for question, _, code in GOLD:
         if not code:
             continue
