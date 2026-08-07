@@ -1,0 +1,288 @@
+"use client";
+
+import { useState, useCallback, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import {
+  MagnifyingGlass,
+  ArrowRight,
+  ArrowLeft,
+  ShieldCheck,
+  XCircle,
+  CaretRight,
+  CaretLeft,
+  Sparkle,
+  Globe,
+  Hash,
+  Paperclip,
+  CircleNotch,
+} from "@phosphor-icons/react";
+
+import { api, type ClaimResult, type AskResult, type CountryVerdict, type Country } from "@/lib/api";
+import { StatusBadge, CountryBadge, Eyebrow } from "@/components/badges";
+import { EuMap } from "@/components/eu-map";
+
+const EXAMPLES = [
+  { q: "Can I say vitamin C supports the immune system?", country: "FR" },
+  { q: "Is a DHA brain claim allowed in Germany?", country: "DE" },
+  { q: "What claims can a glucomannan slimming product make?", country: "ES" },
+];
+
+type View = "results" | "answer";
+
+export default function Explore() {
+  const [query, setQuery] = useState(EXAMPLES[0].q);
+  const [country, setCountry] = useState("FR");
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [results, setResults] = useState<ClaimResult[]>([]);
+  const [ask, setAsk] = useState<AskResult | null>(null);
+  const [view, setView] = useState<View>("results");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.countries().then((d) => setCountries(d.countries)).catch(() => {});
+  }, []);
+
+  const runSearch = useCallback(async (q: string, c: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [r, a] = await Promise.all([
+        api.search(q, c, 5),
+        api.ask(q, c),
+      ]);
+      setResults(r.results);
+      setAsk(a);
+      setView("results");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Search failed");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    runSearch(EXAMPLES[0].q, "FR");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const submit = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    runSearch(query, country);
+  };
+
+  const verdicts: Record<string, CountryVerdict> = {};
+  results.forEach((r) => {
+    if (r.country_status) verdicts[r.policy_item_code] = r.country_status;
+  });
+
+  return (
+    <div className="min-h-[100dvh]">
+      <header className="border-b border-line bg-white/70 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-white">
+              <ShieldCheck size={16} weight="fill" />
+            </div>
+            <span className="font-semibold tracking-tight">sku-regulator</span>
+          </div>
+          <nav className="flex items-center gap-6 text-sm text-muted">
+            <a href="/" className="hover:text-foreground">Pipeline</a>
+            <a href="/explore" className="text-foreground">Explore</a>
+            <a href="/portfolio" className="hover:text-foreground">Portfolio</a>
+          </nav>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-6xl px-6 py-12">
+        <Eyebrow>Ask the register</Eyebrow>
+        <h1 className="mt-3 max-w-2xl text-3xl font-semibold tracking-tight md:text-4xl">
+          "Can I put this on the label?"
+        </h1>
+        <p className="mt-2 max-w-2xl text-muted">
+          Ask in plain language. The answer is grounded in the real EU register,
+          with the sources and the per-market verdict shown — not a model hallucination.
+        </p>
+
+        {/* search bar */}
+        <form onSubmit={submit} className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <div className="relative flex-1">
+            <MagnifyingGlass size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="e.g. Can I say vitamin C supports immunity?"
+              className="w-full rounded-full border border-line bg-white py-3 pl-11 pr-4 text-[15px] outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <select
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
+              aria-label="Target country"
+              className="rounded-full border border-line bg-white px-4 py-3 text-sm outline-none focus:border-accent"
+            >
+              <option value="FR">🇫🇷 FR</option>
+              <option value="DE">🇩🇪 DE</option>
+              <option value="ES">🇪🇸 ES</option>
+              <option value="GB">🇬🇧 GB</option>
+            </select>
+            <button
+              type="submit"
+              disabled={loading}
+              className="inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-3 text-sm font-medium text-background disabled:opacity-60"
+            >
+              {loading ? <CircleNotch size={16} className="animate-spin" /> : <Sparkle size={16} />}
+              Ask
+            </button>
+          </div>
+        </form>
+
+        {/* example chips */}
+        <div className="mt-4 flex flex-wrap gap-2">
+          {EXAMPLES.map((ex) => (
+            <button
+              key={ex.q}
+              onClick={() => { setQuery(ex.q); setCountry(ex.country); runSearch(ex.q, ex.country); }}
+              className="rounded-full border border-line bg-white px-3.5 py-1.5 text-xs text-muted transition-colors hover:border-accent/40 hover:text-foreground"
+            >
+              {ex.q}
+            </button>
+          ))}
+        </div>
+
+        {error && (
+          <div className="mt-6 rounded-xl border border-danger/30 bg-[#fbeae6] px-4 py-3 text-sm text-danger">
+            {error} — is the backend running on :8000?
+          </div>
+        )}
+
+        {/* results + map */}
+        {!error && (
+          <div className="mt-10 grid gap-6 lg:grid-cols-[1fr_360px]">
+            {/* left: results / answer */}
+            <div>
+              {loading ? (
+                <div className="space-y-3">
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className="h-28 animate-pulse rounded-2xl border border-line bg-white" />
+                  ))}
+                </div>
+              ) : view === "results" && results.length > 0 ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted">Top matches for “{query}” in {country}</span>
+                    {ask && (
+                      <button
+                        onClick={() => setView("answer")}
+                        className="inline-flex items-center gap-1 text-sm font-medium text-accent hover:underline"
+                      >
+                        Read the grounded answer <ArrowRight size={14} />
+                      </button>
+                    )}
+                  </div>
+                  {results.map((r) => (
+                    <ResultCard key={r.policy_item_code} r={r} country={country} />
+                  ))}
+                </div>
+              ) : ask && view === "answer" ? (
+                <AnswerCard ask={ask} onBack={() => setView("results")} />
+              ) : null}
+            </div>
+
+            {/* right: map */}
+            <div className="lg:sticky lg:top-8 lg:self-start">
+              <div className="rounded-2xl border border-line bg-white p-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Globe size={16} className="text-accent" /> Market view
+                  </div>
+                  <span className="font-mono text-xs text-muted">{country}</span>
+                </div>
+                <div className="mt-3">
+                  <EuMap verdicts={{ [country]: "allowed" }} activeCode={country} />
+                </div>
+                <p className="mt-3 text-xs leading-relaxed text-muted">
+                  Simplified map of the markets the register governs. Pick a claim
+                  below to see how the same wording is treated in each country.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+function ResultCard({ r, country }: { r: ClaimResult; country: string }) {
+  return (
+    <div className="rounded-2xl border border-line bg-white p-4 transition-shadow hover:shadow-sm">
+      <div className="flex flex-wrap items-center gap-2">
+        <code className="rounded bg-accent-soft px-2 py-0.5 font-mono text-xs text-accent">
+          {r.policy_item_code}
+        </code>
+        <StatusBadge status={r.status} />
+        <CountryBadge verdict={r.country_status} />
+        <span className="ml-auto font-mono text-xs text-muted">
+          {r.claim_type ?? "—"}
+        </span>
+      </div>
+      <p className="mt-2.5 text-[15px] leading-relaxed text-foreground/90">{r.claim_text}</p>
+      {r.matches && (
+        <div className="mt-3 flex items-center gap-4 border-t border-line pt-2.5 font-mono text-xs text-muted">
+          <span className="inline-flex items-center gap-1"><Hash size={12} /> fts {r.matches.fts?.toFixed(2) ?? "—"}</span>
+          <span className="inline-flex items-center gap-1"><Paperclip size={12} /> vec {r.matches.vector?.toFixed(2) ?? "—"}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AnswerCard({ ask, onBack }: { ask: AskResult; onBack: () => void }) {
+  const [lines, setLines] = useState<string[]>([]);
+  useEffect(() => {
+    setLines([]);
+    const words = ask.answer.split(" ");
+    let i = 0;
+    const t = setInterval(() => {
+      i += 1;
+      setLines(ask.answer.split(" ").slice(0, i * 6));
+      if (i * 6 >= ask.answer.split(" ").length) clearInterval(t);
+    }, 60);
+    return () => clearInterval(t);
+  }, [ask.answer]);
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-accent/25 bg-white">
+      <div className="border-b border-line p-4">
+        <button onClick={onBack} className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground">
+          <ArrowLeft size={14} /> Back to matches
+        </button>
+      </div>
+      <div className="space-y-3 p-5">
+        <div className="flex items-start gap-2.5">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
+            <Sparkle size={14} weight="fill" />
+          </div>
+          <p className="text-[15px] leading-relaxed text-foreground/90">
+            {lines.join(" ")}
+            <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-accent align-middle" />
+          </p>
+        </div>
+      </div>
+      <div className="border-t border-line p-4">
+        <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">Sources</div>
+        <div className="space-y-2">
+          {ask.sources.map((s) => (
+            <div key={s.policy_item_code} className="flex items-center gap-2 text-sm">
+              <code className="rounded bg-accent-soft px-1.5 py-0.5 font-mono text-xs text-accent">{s.policy_item_code}</code>
+              <StatusBadge status={s.status} />
+              <span className="text-xs text-muted">{s.claim_text.slice(0, 60)}…</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
