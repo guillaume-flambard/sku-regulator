@@ -93,6 +93,8 @@ CREATE TABLE IF NOT EXISTS sources (
 );
 
 CREATE INDEX IF NOT EXISTS idx_sources_claim ON sources(claim_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_sources_dedup
+    ON sources(claim_id, source_type, coalesce(reference, ''));
 
 -- -----------------------------------------------------------------------------
 -- Country pivot: the compliance answer per market

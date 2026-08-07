@@ -59,6 +59,19 @@ docker-compose.yml   Postgres 16 + pgvector
 Prereqs: Docker, Python 3.11+, Node 20+, and [Ollama](https://ollama.com)
 with `nomic-embed-text` and `llama3.2:3b` pulled.
 
+### One command (recommended for demos)
+
+```bash
+bash scripts/demo.sh        # boot everything: db + seed + api + web (dev)
+bash scripts/demo.sh --build # same, but with a production web build
+bash scripts/healthcheck.sh # verify every layer before the demo
+```
+
+Idempotent and self-healing: safe to re-run, it verifies each layer and tells
+you exactly what's missing. Full walkthrough: `docs/demo-runbook.md`.
+
+### Step by step
+
 ```bash
 # 1. Database (Postgres 16 + pgvector on port 55432)
 docker compose up -d db

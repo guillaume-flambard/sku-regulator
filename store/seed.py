@@ -195,28 +195,32 @@ def load_claims(conn: psycopg.Connection, with_embeddings: bool) -> dict[str, in
             )
             claim_id = cur.fetchone()[0]
 
-            # link ingredients
+            # link ingredients (idempotent: dedupe on re-run)
             for name in ing_names:
                 cur.execute(
-                    "INSERT INTO claim_ingredients (claim_id, ingredient_id) VALUES (%s, %s)",
+                    """INSERT INTO claim_ingredients (claim_id, ingredient_id)
+                       VALUES (%s, %s) ON CONFLICT (claim_id, ingredient_id) DO NOTHING""",
                     (claim_id, ingredient_ids[name]),
                 )
 
-            # sources: eu_register + EFSA opinions + legislation
+            # sources: eu_register + EFSA opinions + legislation (idempotent)
             cur.execute(
-                "INSERT INTO sources (claim_id, source_type, reference, url) VALUES (%s,'eu_register',%s,NULL)",
+                """INSERT INTO sources (claim_id, source_type, reference, url)
+                   VALUES (%s,'eu_register',%s,NULL) ON CONFLICT DO NOTHING""",
                 (claim_id, rec["policy_item_code"]),
             )
             counts["sources"] += 1
             for ref in rec.get("efsa_references") or []:
                 cur.execute(
-                    "INSERT INTO sources (claim_id, source_type, reference, url) VALUES (%s,'efsa_opinion',%s,%s)",
+                    """INSERT INTO sources (claim_id, source_type, reference, url)
+                       VALUES (%s,'efsa_opinion',%s,%s) ON CONFLICT DO NOTHING""",
                     (claim_id, ref.get("reference"), ref.get("url")),
                 )
                 counts["sources"] += 1
             for leg in rec.get("legislation") or []:
                 cur.execute(
-                    "INSERT INTO sources (claim_id, source_type, reference, url) VALUES (%s,'legislation',%s,%s)",
+                    """INSERT INTO sources (claim_id, source_type, reference, url)
+                       VALUES (%s,'legislation',%s,%s) ON CONFLICT DO NOTHING""",
                     (claim_id, leg.get("legislation"), leg.get("eurlex_url")),
                 )
                 counts["sources"] += 1
