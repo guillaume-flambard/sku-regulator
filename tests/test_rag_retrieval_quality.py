@@ -26,6 +26,7 @@ GOLD = [
 
 def _ollama_available() -> bool:
     import urllib.request
+
     try:
         with urllib.request.urlopen("http://localhost:11434/api/tags", timeout=2):
             return True

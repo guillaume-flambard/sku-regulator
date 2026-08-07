@@ -35,8 +35,9 @@ test.describe("Explore — ask the register", () => {
   });
 
   test("grounded answer loads on demand and lists sources", async ({ page }) => {
+    test.setTimeout(90_000); // local LLM on a slow CPU can take ~60s cold
     await page.getByRole("button", { name: "Read the grounded answer" }).click();
-    await expect(page.getByText("Sources", { exact: true })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText("Sources", { exact: true })).toBeVisible({ timeout: 80_000 });
     await expect(page.getByText(/POL-HC-65\d\d/).first()).toBeVisible();
   });
 
