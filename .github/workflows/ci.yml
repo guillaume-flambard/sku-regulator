@@ -167,9 +167,16 @@ jobs:
         env:
           SKU_DB_DSN: "host=localhost port=55432 dbname=sku_regulator user=sku password=sku"
 
-      - name: Start Ollama
+      - name: Start Ollama (with retry — install.sh can flap transiently)
         run: |
-          curl -fsSL https://ollama.com/install.sh | sh
+          for i in 1 2 3; do
+            echo "install attempt $i"
+            if curl -fsSL https://ollama.com/install.sh | sh; then
+              break
+            fi
+            echo "install failed, retrying in 5s"
+            sleep 5
+          done
           # the installer already starts the daemon; just ensure it's up and pull models
           sleep 3
           ollama pull nomic-embed-text
