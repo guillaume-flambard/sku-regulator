@@ -1,0 +1,178 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  # ---------------------------------------------------------------- unit tests
+  unit-python:
+    name: Python unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Ruff lint
+        run: ruff check api rag store ingest tests
+
+      - name: Ruff format check
+        run: ruff format --check api rag store ingest tests
+
+      - name: Unit tests (no infra)
+        run: pytest -m "not integration and not slow" tests
+
+  # ------------------------------------------------------------ frontend checks
+  frontend:
+    name: Frontend lint + typecheck
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: ESLint
+        run: npx eslint src e2e
+
+      - name: Production build
+        run: npm run build
+
+  # ------------------------------------------------- integration (Postgres+pgvector)
+  integration:
+    name: Integration + API tests (Postgres/pgvector)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: sku
+          POSTGRES_PASSWORD: sku
+          POSTGRES_DB: sku_regulator
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U sku -d sku_regulator"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Integration tests (isolation DB auto-created, no Ollama)
+        run: pytest -m "integration and not slow" tests
+        env:
+          SKU_DB_DSN: "host=localhost port=55432 dbname=sku_regulator user=sku password=sku"
+
+      - name: API tests
+        run: pytest tests/test_api.py tests/test_resilience.py
+        env:
+          SKU_DB_DSN: "host=localhost port=55432 dbname=sku_regulator user=sku password=sku"
+
+  # ------------------------------------------------------------- E2E (full stack)
+  e2e:
+    name: E2E (API + web + Ollama)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: sku
+          POSTGRES_PASSWORD: sku
+          POSTGRES_DB: sku_regulator
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U sku -d sku_regulator"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Python deps
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Seed demo DB
+        run: |
+          python store/seed.py
+          python store/demo_enrich.py
+        env:
+          SKU_DB_DSN: "host=localhost port=55432 dbname=sku_regulator user=sku password=sku"
+
+      - name: Start Ollama
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          ollama serve &
+          sleep 5
+          ollama pull nomic-embed-text
+          ollama pull llama3.2:3b
+
+      - name: RAG safety tests (real LLM)
+        env:
+          SKU_DB_DSN: "host=localhost port=55432 dbname=sku_regulator user=sku password=sku"
+        run: pytest -m "integration and slow" tests/test_rag_safety.py tests/test_integration_db.py::test_vector_search_finds_semantic_match
+
+      - name: Start API
+        env:
+          SKU_DB_DSN: "host=localhost port=55432 dbname=sku_regulator user=sku password=sku"
+        run: |
+          nohup python -m uvicorn api.main:app --host 127.0.0.1 --port 8000 >/tmp/api.log 2>&1 &
+          sleep 4
+          curl -sS http://127.0.0.1:8000/api/health
+
+      - name: Install web deps
+        working-directory: web
+        run: npm ci
+
+      - name: Run Playwright
+        working-directory: web
+        run: |
+          npm run build
+          npx playwright install --with-deps chromium
+          (nohup npm run start >/tmp/web.log 2>&1 &)
+          sleep 6
+          curl -sS -o /dev/null http://localhost:3000/
+          npx playwright test
