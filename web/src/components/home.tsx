@@ -158,10 +158,10 @@ export default function Home({ stats }: { stats: Stats | null }) {
             <span className="font-semibold tracking-tight">sku-regulator</span>
             <span className="hidden text-sm text-muted sm:inline">· EU health-claims intelligence</span>
           </div>
-          <nav className="flex items-center gap-6 text-sm text-muted">
+          <nav className="flex items-center gap-3 text-sm text-muted sm:gap-6">
             <a href="#pipeline" className="hover:text-foreground">Pipeline</a>
             <a href="/explore" className="hover:text-foreground">Explore</a>
-            <a href="/portfolio" className="hover:text-foreground">Portfolio</a>
+            <a href="/portfolio" className="hidden hover:text-foreground sm:inline">Portfolio</a>
             <a href="/graph" className="hover:text-foreground">Graph</a>
           </nav>
         </div>

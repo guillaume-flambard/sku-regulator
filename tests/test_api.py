@@ -19,6 +19,7 @@ pytestmark = pytest.mark.integration
 def client(sku_dsn):
     """TestClient whose modules were re-imported against the test DSN."""
     import api.main
+
     return TestClient(api.main.app)
 
 
@@ -75,8 +76,12 @@ def test_ask_returns_grounded_answer(client, monkeypatch):
             "country": country,
             "answer": "Based on POL-HC-6510, the claim is authorised in France.",
             "sources": [
-                {"policy_item_code": "POL-HC-6510", "claim_text": "Vitamin C...",
-                 "status": "authorised", "country_status": "allowed"}
+                {
+                    "policy_item_code": "POL-HC-6510",
+                    "claim_text": "Vitamin C...",
+                    "status": "authorised",
+                    "country_status": "allowed",
+                }
             ],
         }
 
@@ -123,6 +128,7 @@ def test_anomalies_resolve_and_undo(client):
     """The resolve→undo cycle must round-trip against the test DB."""
     # the isolated DB may have no anomalies; insert one directly to test the cycle
     import psycopg
+
     dsn = "host=localhost port=55432 dbname=sku_regulator_test user=sku password=sku"
     with psycopg.connect(dsn) as conn:
         with conn.cursor() as cur:

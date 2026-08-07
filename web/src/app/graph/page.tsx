@@ -78,10 +78,10 @@ export default function GraphPage() {
             </div>
             <span className="font-semibold tracking-tight">sku-regulator</span>
           </div>
-          <nav className="flex items-center gap-6 text-sm text-muted">
+          <nav className="flex items-center gap-3 text-sm text-muted sm:gap-6">
             <Link href="/" className="hover:text-foreground">Pipeline</Link>
             <Link href="/explore" className="hover:text-foreground">Explore</Link>
-            <Link href="/portfolio" className="hover:text-foreground">Portfolio</Link>
+            <Link href="/portfolio" className="hidden hover:text-foreground sm:inline">Portfolio</Link>
             <Link href="/graph" className="text-foreground">Graph</Link>
           </nav>
         </div>

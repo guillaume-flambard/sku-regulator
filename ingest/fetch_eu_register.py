@@ -20,7 +20,7 @@ import argparse
 import json
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import urlencode
 
@@ -34,8 +34,8 @@ DEFAULT_UA = (
 )
 
 POLICY_ITEMS_QUERY = {
-    "foodDomain": "nut",            # nutrition / health claims domain
-    "authorisationType": "nut_auth" # EU health-claim authorisations
+    "foodDomain": "nut",  # nutrition / health claims domain
+    "authorisationType": "nut_auth",  # EU health-claim authorisations
 }
 
 
@@ -48,7 +48,7 @@ def fetch_json(url: str, session: requests.Session, retries: int = 3) -> dict | 
             return resp.json()
         except (requests.RequestException, ValueError) as err:
             last_err = err
-            wait = 2 ** attempt
+            wait = 2**attempt
             print(f"    [retry {attempt}/{retries}] {type(err).__name__}: {err} — waiting {wait}s")
             time.sleep(wait)
     raise RuntimeError(f"Failed to fetch {url}: {last_err}")
@@ -67,7 +67,7 @@ def main() -> int:
     url = f"{FIP_API_BASE}/policy-items?{urlencode(POLICY_ITEMS_QUERY)}"
     args.out.parent.mkdir(parents=True, exist_ok=True)
 
-    print(f"[ingest] fetching EU health-claims register")
+    print("[ingest] fetching EU health-claims register")
     print(f"    url: {url}")
 
     session = requests.Session()
@@ -83,7 +83,7 @@ def main() -> int:
 
     print(f"[ingest] done — {len(items)} policy items saved to {args.out} ({elapsed:.1f}s)")
     print(f"[ingest] size: {args.out.stat().st_size / 1e6:.1f} MB")
-    print(f"[ingest] fetched_at: {datetime.now(timezone.utc).isoformat()}")
+    print(f"[ingest] fetched_at: {datetime.now(UTC).isoformat()}")
     return 0
 
 

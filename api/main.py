@@ -14,36 +14,83 @@ Endpoints:
 
 from __future__ import annotations
 
+import functools
 import os
 
-from fastapi import FastAPI, HTTPException
+# Keep the DB open per-request via a connection helper that matches rag.retrieve
+import psycopg
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from rag.answer import answer_question
 from rag.retrieve import country_lookup, hybrid_search
-
-# Keep the DB open per-request via a connection helper that matches rag.retrieve
-import psycopg
 
 DSN = os.environ.get(
     "SKU_DB_DSN",
     "host=localhost port=55432 dbname=sku_regulator user=sku password=sku",
 )
 
+# Demo CORS: allow only the local web app origins. Override via SKU_CORS_ORIGINS
+# (comma-separated) when the UI runs elsewhere.
+ALLOWED_ORIGINS = os.environ.get(
+    "SKU_CORS_ORIGINS",
+    "http://localhost:3000,http://127.0.0.1:3000",
+).split(",")
+
 app = FastAPI(title="sku-regulator API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # demo only
+    allow_origins=ALLOWED_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """Convert unexpected errors (e.g. a DB outage) into a clean JSON 500.
+
+    Without this, FastAPI would leak a raw traceback / HTML error page to the
+    client. The message is kept generic — never echo exception internals.
+    """
+    if isinstance(exc, HTTPException):
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal error — the backing service may be unavailable."},
+    )
+
+
 class AskRequest(BaseModel):
     question: str = Field(min_length=1, description="The compliance question")
     country: str = Field(default="FR", min_length=2, max_length=2)
+
+
+def guard_db(func):
+    """Wrap a DB-backed endpoint: convert backend failures into a clean JSON 500.
+
+    The global Exception handler doesn't catch errors raised inside sync
+    endpoints (they run in a threadpool), so DB-backed routes wrap themselves.
+    functools.wraps preserves the endpoint's signature so FastAPI keeps its
+    query/body validation.
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except HTTPException:
+            raise
+        except Exception:
+            return JSONResponse(
+                status_code=500,
+                content={"detail": "Internal error — the backing service may be unavailable."},
+            )
+
+    return wrapper
 
 
 @app.get("/api/health")
@@ -52,6 +99,7 @@ def health() -> dict:
 
 
 @app.get("/api/stats")
+@guard_db
 def stats() -> dict:
     with psycopg.connect(DSN) as conn, conn.cursor() as cur:
         cur.execute("SELECT count(*) FROM claims")
@@ -78,6 +126,7 @@ def stats() -> dict:
 
 
 @app.get("/api/countries")
+@guard_db
 def countries() -> dict:
     with psycopg.connect(DSN) as conn, conn.cursor() as cur:
         cur.execute("SELECT code, name FROM countries ORDER BY name")
@@ -86,6 +135,7 @@ def countries() -> dict:
 
 
 @app.get("/api/claims")
+@guard_db
 def claims(q: str, country: str = "FR", top_k: int = 5) -> dict:
     if not q.strip():
         return {"query": q, "country": country, "results": []}
@@ -109,6 +159,7 @@ def ask(req: AskRequest) -> dict:
 
 
 @app.get("/api/graph")
+@guard_db
 def graph() -> dict:
     """Knowledge graph for the demo: products -> claims -> ingredients."""
     nodes: list[dict] = []
@@ -157,6 +208,7 @@ def graph() -> dict:
 
 
 @app.get("/api/anomalies")
+@guard_db
 def anomalies(status: str = "open") -> dict:
     with psycopg.connect(DSN) as conn, conn.cursor() as cur:
         cur.execute(
@@ -192,6 +244,7 @@ def anomalies(status: str = "open") -> dict:
 
 
 @app.post("/api/anomalies/{anomaly_id}/resolve")
+@guard_db
 def resolve_anomaly(anomaly_id: int) -> dict:
     with psycopg.connect(DSN) as conn, conn.cursor() as cur:
         cur.execute(
@@ -203,6 +256,7 @@ def resolve_anomaly(anomaly_id: int) -> dict:
 
 
 @app.post("/api/anomalies/{anomaly_id}/undo")
+@guard_db
 def undo_anomaly(anomaly_id: int) -> dict:
     """Reopen a resolved anomaly (undo)."""
     with psycopg.connect(DSN) as conn, conn.cursor() as cur:
@@ -215,6 +269,7 @@ def undo_anomaly(anomaly_id: int) -> dict:
 
 
 @app.get("/api/products")
+@guard_db
 def products(country: str | None = None) -> dict:
     q = """
         SELECT p.sku, p.name, p.brand, p.country_code,

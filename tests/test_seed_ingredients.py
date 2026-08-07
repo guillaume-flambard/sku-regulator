@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from store.seed import detect_ingredients  # noqa: E402
+from store.seed import detect_ingredients
 
 
 def test_detects_vitamin_c_canonical():

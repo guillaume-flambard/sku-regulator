@@ -1,0 +1,8 @@
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "SIM", "B", "W"]
+# tests may catch blind exceptions on purpose (e.g. skip when Ollama is down)
+per-file-ignores = { "tests/*.py" = ["BLE001"] }

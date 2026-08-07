@@ -7,8 +7,6 @@ so they never touch the demo database used by the running app.
 from __future__ import annotations
 
 import json
-import os
-import subprocess
 import sys
 from pathlib import Path
 
@@ -36,13 +34,12 @@ KNOWN_CODES = {
 
 def _ensure_test_db() -> None:
     """Create the test database once, if missing."""
-    with psycopg.connect(ADMIN_DSN) as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT 1 FROM pg_database WHERE datname=%s", (TEST_DB,))
-            if cur.fetchone() is None:
-                conn.autocommit = True
-                with conn.cursor() as cur2:
-                    cur2.execute(f'CREATE DATABASE "{TEST_DB}"')
+    with psycopg.connect(ADMIN_DSN) as conn, conn.cursor() as cur:
+        cur.execute("SELECT 1 FROM pg_database WHERE datname=%s", (TEST_DB,))
+        if cur.fetchone() is None:
+            conn.autocommit = True
+            with conn.cursor() as cur2:
+                cur2.execute(f'CREATE DATABASE "{TEST_DB}"')
     # schema
     schema = (REPO_ROOT / "store/schema.sql").read_text()
     with psycopg.connect(TEST_DSN) as conn:
@@ -55,6 +52,7 @@ def _embed_texts(texts: list[str]) -> list[list[float]] | None:
     """Compute embeddings for the seeded claims. Returns None if Ollama is down."""
     try:
         import ollama
+
         return ollama.embed(model="nomic-embed-text", input=texts)["embeddings"]
     except Exception:
         return None
@@ -88,11 +86,16 @@ def _seed_test_db() -> None:
         texts = [f"{r.get('claim_text') or ''} — {r.get('health_relationship') or ''}" for r in rows]
         vecs = _embed_texts(texts)
         if vecs:
-            embeds = {r["policy_item_code"]: v for r, v in zip(rows, vecs)}
+            embeds = {r["policy_item_code"]: v for r, v in zip(rows, vecs, strict=True)}
 
     with psycopg.connect(TEST_DSN) as conn:
         with conn.cursor() as cur:
-            for code, name in [("FR", "France"), ("DE", "Germany"), ("ES", "Spain"), ("GB", "United Kingdom")]:
+            for code, name in [
+                ("FR", "France"),
+                ("DE", "Germany"),
+                ("ES", "Spain"),
+                ("GB", "United Kingdom"),
+            ]:
                 cur.execute(
                     "INSERT INTO countries (code, name) VALUES (%s,%s) ON CONFLICT (code) DO NOTHING",
                     (code, name),
@@ -122,7 +125,10 @@ def _seed_test_db() -> None:
                 )
                 claim_id = cur.fetchone()
                 if claim_id is None:  # already inserted previously
-                    cur.execute("SELECT id FROM claims WHERE policy_item_code=%s", (rec["policy_item_code"],))
+                    cur.execute(
+                        "SELECT id FROM claims WHERE policy_item_code=%s",
+                        (rec["policy_item_code"],),
+                    )
                     claim_id = cur.fetchone()
                 for cc in ("FR", "DE", "ES", "GB"):
                     status = "allowed" if rec["status"] == "authorised" else "not_allowed"
@@ -151,6 +157,7 @@ def sku_dsn(monkeypatch, test_db):
         if mod.startswith(("rag.", "api.", "store.")):
             del sys.modules[mod]
     import rag.retrieve  # noqa: F401
+
     return test_db
 
 
@@ -158,4 +165,5 @@ def sku_dsn(monkeypatch, test_db):
 def retrieve_module(sku_dsn):
     """The freshly-imported rag.retrieve module bound to the test DSN."""
     import rag.retrieve
+
     return rag.retrieve

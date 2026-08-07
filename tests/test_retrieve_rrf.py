@@ -7,7 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import rag.retrieve as retrieve  # noqa: E402
+from rag import retrieve
 
 
 def make_result(code, status="authorised"):

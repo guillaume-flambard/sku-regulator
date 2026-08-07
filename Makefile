@@ -11,11 +11,13 @@
 #   make demo-prod         boot with a production web build (stable for demos)
 #   make health            pre-demo health check
 #   make reseed            reset the demo data (anomaly queue etc.)
+#   make audit             SBOM/vuln scan (pip-audit + npm audit)
+#   make lint              ruff lint + format check on Python
 
 PYTHON   ?= .venv/bin/python
 E2E_DIR  := web
 
-.PHONY: test-unit test-integration test-api test-python test-e2e test demo demo-prod health reseed
+.PHONY: test-unit test-integration test-api test-python test-e2e test demo demo-prod health reseed audit lint
 
 test-unit:
 	$(PYTHON) -m pytest -m "not integration and not slow" tests
@@ -46,3 +48,11 @@ health:
 
 reseed:
 	$(PYTHON) store/demo_enrich.py
+
+audit:
+	$(PYTHON) -m pip_audit -r requirements.txt
+	cd $(E2E_DIR) && npm audit
+
+lint:
+	$(PYTHON) -m ruff check api rag store ingest tests
+	$(PYTHON) -m ruff format --check api rag store ingest tests

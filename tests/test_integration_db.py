@@ -32,8 +32,19 @@ def test_all_tables_exist(conn):
     with conn.cursor() as cur:
         cur.execute(
             "SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename=ANY(%s)",
-            (["countries", "ingredients", "claims", "claim_ingredients", "sources",
-              "country_status", "products", "product_claims", "anomalies"],),
+            (
+                [
+                    "countries",
+                    "ingredients",
+                    "claims",
+                    "claim_ingredients",
+                    "sources",
+                    "country_status",
+                    "products",
+                    "product_claims",
+                    "anomalies",
+                ],
+            ),
         )
         assert len(cur.fetchall()) == 9
 
@@ -41,10 +52,18 @@ def test_all_tables_exist(conn):
 def test_claims_seeded(conn):
     with conn.cursor() as cur:
         n = _count(cur, "SELECT count(*) FROM claims")
-    assert n == len({  # unique codes in KNOWN_CODES
-        "POL-HC-6510", "POL-HC-6500", "POL-HC-6480", "POL-HC-8119",
-        "POL-HC-7424", "POL-HC-6228", "POL-HC-6368", "POL-HC-6381",
-    })
+    assert n == len(
+        {  # unique codes in KNOWN_CODES
+            "POL-HC-6510",
+            "POL-HC-6500",
+            "POL-HC-6480",
+            "POL-HC-8119",
+            "POL-HC-7424",
+            "POL-HC-6228",
+            "POL-HC-6368",
+            "POL-HC-6381",
+        }
+    )
 
 
 def test_country_status_pivot(conn):

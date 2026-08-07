@@ -26,13 +26,33 @@ DEFAULT_DSN = "host=localhost port=55432 dbname=sku_regulator user=sku password=
 
 # ISO-3166 alpha-2 for EU member states (27) — used as the multi-market layer.
 EU_COUNTRIES = [
-    ("AT", "Austria"), ("BE", "Belgium"), ("BG", "Bulgaria"), ("HR", "Croatia"),
-    ("CY", "Cyprus"), ("CZ", "Czechia"), ("DK", "Denmark"), ("EE", "Estonia"),
-    ("FI", "Finland"), ("FR", "France"), ("DE", "Germany"), ("GR", "Greece"),
-    ("HU", "Hungary"), ("IE", "Ireland"), ("IT", "Italy"), ("LV", "Latvia"),
-    ("LT", "Lithuania"), ("LU", "Luxembourg"), ("MT", "Malta"), ("NL", "Netherlands"),
-    ("PL", "Poland"), ("PT", "Portugal"), ("RO", "Romania"), ("SK", "Slovakia"),
-    ("SI", "Slovenia"), ("ES", "Spain"), ("SE", "Sweden"),
+    ("AT", "Austria"),
+    ("BE", "Belgium"),
+    ("BG", "Bulgaria"),
+    ("HR", "Croatia"),
+    ("CY", "Cyprus"),
+    ("CZ", "Czechia"),
+    ("DK", "Denmark"),
+    ("EE", "Estonia"),
+    ("FI", "Finland"),
+    ("FR", "France"),
+    ("DE", "Germany"),
+    ("GR", "Greece"),
+    ("HU", "Hungary"),
+    ("IE", "Ireland"),
+    ("IT", "Italy"),
+    ("LV", "Latvia"),
+    ("LT", "Lithuania"),
+    ("LU", "Luxembourg"),
+    ("MT", "Malta"),
+    ("NL", "Netherlands"),
+    ("PL", "Poland"),
+    ("PT", "Portugal"),
+    ("RO", "Romania"),
+    ("SK", "Slovakia"),
+    ("SI", "Slovenia"),
+    ("ES", "Spain"),
+    ("SE", "Sweden"),
     # United Kingdom — no longer an EU member state, but still a real market
     # for the same products. Included here because the EU Register remains the
     # reference for UK labelling (EU-derived rules were retained post-Brexit).
@@ -114,8 +134,9 @@ def load_claims(conn: psycopg.Connection, with_embeddings: bool) -> dict[str, in
                         if attempt == retries:
                             raise
                         import time
+
                         print(f"[seed] embed retry {attempt}/{retries}: {err}")
-                        time.sleep(2 ** attempt)
+                        time.sleep(2**attempt)
                 return []
 
             embed_fn = _embed
@@ -141,10 +162,11 @@ def load_claims(conn: psycopg.Connection, with_embeddings: bool) -> dict[str, in
         for _, names in rows_for_claims:
             for name in names:
                 if name not in ingredient_ids:
-                    cur.execute(
-                        "INSERT INTO ingredients (name) VALUES (%s) ON CONFLICT (name) DO UPDATE SET name=EXCLUDED.name RETURNING id",
-                        (name,),
+                    sql = (
+                        "INSERT INTO ingredients (name) VALUES (%s) "
+                        "ON CONFLICT (name) DO UPDATE SET name=EXCLUDED.name RETURNING id"
                     )
+                    cur.execute(sql, (name,))
                     ingredient_ids[name] = cur.fetchone()[0]
                     counts["ingredients"] += 1
 
@@ -160,11 +182,11 @@ def load_claims(conn: psycopg.Connection, with_embeddings: bool) -> dict[str, in
                 batch_texts.append(text)
                 batch_codes.append(rec["policy_item_code"])
                 if len(batch_texts) >= batch_size:
-                    for code, emb in zip(batch_codes, embed_fn(batch_texts)):
+                    for code, emb in zip(batch_codes, embed_fn(batch_texts), strict=True):
                         embedding_by_code[code] = emb
                     batch_texts, batch_codes = [], []
             if batch_texts:
-                for code, emb in zip(batch_codes, embed_fn(batch_texts)):
+                for code, emb in zip(batch_codes, embed_fn(batch_texts), strict=True):
                     embedding_by_code[code] = emb
             print(f"[seed] computed {len(embedding_by_code)} embeddings (Ollama nomic-embed-text)")
 
@@ -189,7 +211,7 @@ def load_claims(conn: psycopg.Connection, with_embeddings: bool) -> dict[str, in
                     rec.get("restriction_of_use"),
                     rec.get("nutrient_food_cat"),
                     rec.get("reasons_for_non_auth") or [],
-                    True if rec.get("data_protection") == "yes" else False,
+                    rec.get("data_protection") == "yes",
                     embedding_by_code.get(rec["policy_item_code"]),
                 ),
             )
@@ -244,8 +266,10 @@ def load_claims(conn: psycopg.Connection, with_embeddings: bool) -> dict[str, in
                 counts["country_status"] += 1
 
     conn.commit()
-    print(f"[seed] {len(records)} claims loaded "
-          f"({counts['ingredients']} ingredients, {counts['sources']} sources, {counts['country_status']} country_status)")
+    print(
+        f"[seed] {len(records)} claims loaded "
+        f"({counts['ingredients']} ingredients, {counts['sources']} sources, {counts['country_status']} country_status)"
+    )
     return counts
 
 

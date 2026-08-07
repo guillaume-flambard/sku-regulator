@@ -15,7 +15,6 @@ LangChain is used at the LLM/QA layer (see rag/answer.py).
 from __future__ import annotations
 
 import argparse
-import json
 import os
 
 import psycopg
@@ -30,6 +29,28 @@ TOP_K_DEFAULT = 5
 # vector-only hits below this cosine score are treated as noise, not matches.
 # Tuned on the full register: real queries score 0.65+, gibberish tops out ~0.55.
 VECTOR_MIN_SCORE = 0.6
+
+# Query-expansion synonyms: the register words claims in legal/EFSA language
+# ("EPA and DHA") that consumers phrase differently ("omega 3"). Expanding the
+# query before FTS + embedding recovers those matches.
+SYNONYMS = {
+    "omega 3": "EPA DHA omega-3 omega3",
+    "omega-3": "EPA DHA omega-3 omega3",
+    "vitamin c": "vitamin c ascorbic",
+    "immunity": "immune immunity defence defences",
+    "probiotic": "probiotic lactobacillus bifidobacterium bacteria flora",
+    "gut": "gut intestinal intestine flora",
+    "bones": "bone bones calcium skeletal",
+}
+
+
+def expand_query(query: str) -> str:
+    """Replace known consumer phrases with their regulatory synonyms."""
+    low = query.lower()
+    for phrase, replacement in SYNONYMS.items():
+        if phrase in low:
+            query = f"{query} {replacement}"
+    return query
 
 
 def _connect():
@@ -70,6 +91,7 @@ def vector_search(query: str, top_k: int = TOP_K_DEFAULT) -> list[dict]:
     """pgvector cosine similarity (needs a pre-computed query embedding)."""
     try:
         import ollama
+
         emb = ollama.embed(model="nomic-embed-text", input=query)["embeddings"][0]
     except Exception as err:
         raise RuntimeError(f"Ollama embedding failed: {err}") from err
@@ -96,9 +118,13 @@ def hybrid_search(query: str, top_k: int = TOP_K_DEFAULT) -> dict:
       - full-text hits always qualify (an exact wording match is meaningful),
       - vector-only hits require a cosine score above VECTOR_MIN_SCORE.
     This keeps meaningless queries from surfacing low-score noise.
+
+    The query is expanded with regulatory synonyms first (e.g. "omega 3" ->
+    "EPA DHA") so consumer phrasing matches the register's wording.
     """
-    fts = fts_search(query, top_k=top_k * 3)
-    vec = vector_search(query, top_k=top_k * 3)
+    expanded = expand_query(query)
+    fts = fts_search(expanded, top_k=top_k * 3)
+    vec = vector_search(expanded, top_k=top_k * 3)
 
     fused: dict[str, dict] = {}
     for source, results in (("fts", fts), ("vector", vec)):
@@ -142,7 +168,7 @@ def main() -> int:
     args = ap.parse_args()
 
     res = hybrid_search(args.query, args.top_k)
-    print(f"\n=== Hybrid search: \"{args.query}\" (top {len(res['results'])}) ===")
+    print(f'\n=== Hybrid search: "{args.query}" (top {len(res["results"])}) ===')
     codes = [r["policy_item_code"] for r in res["results"]]
     countries = country_lookup(codes, args.country)
 

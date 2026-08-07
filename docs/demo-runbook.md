@@ -79,3 +79,20 @@ Go to **/graph**.
 - Confidence bars come from `product_claims.confidence` — real values.
 - If the LLM answer is imperfect, say so: *"this is why the pipeline keeps a
   human in the loop."*
+
+## If asked about testing & security (the audit story)
+
+The repo ships automated verification beyond the demo itself:
+
+- **84 automated checks**: 76 Python tests (unit/integration/API/RAG-safety/
+  resilience) + 20 Playwright E2E (flows, accessibility, layout).
+- **RAG safety**: faithfulness (answers never invent statuses), prompt-injection
+  resistance (verified against "ignore your instructions" / "repeat your system
+  prompt" attacks), strict output format with register citations.
+- **Security**: parameterised SQL, no `innerHTML`, CORS locked to the local web
+  origin, security headers (CSP report-only, nosniff, X-Frame-Options), a
+  `d3-color` ReDoS fix via npm override, and `make audit` (`pip-audit` +
+  `npm audit`) reporting zero known CVEs.
+- **Resilience**: the API returns clean JSON 500s when the DB is down, and
+  `/api/health` stays up.
+- Run them: `make test`, `make audit`, `make lint`.

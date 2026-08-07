@@ -50,11 +50,7 @@ def walk(node: dict):
 
 
 def all_values(item: dict, ident: str) -> list[str]:
-    return [
-        n["value"]
-        for n in walk(item)
-        if n.get("valueIdentifier") == ident and n.get("value") is not None
-    ]
+    return [n["value"] for n in walk(item) if n.get("valueIdentifier") == ident and n.get("value") is not None]
 
 
 def first_value(item: dict, ident: str) -> str | None:
@@ -103,11 +99,24 @@ def all_nodes(item: dict, ident: str) -> list[dict]:
     return [n for n in walk(item) if n.get("valueIdentifier") == ident]
 
 
+def _safe_str(value):
+    """Coerce a scalar to str for lookup maps; non-str values become None.
+
+    The FIP payload is trusted-ish, but a corrupted node could carry a list or
+    dict in a scalar field; dict lookups must never raise on it.
+    """
+    if isinstance(value, str):
+        return value
+    return None
+
+
 def parse_item(item: dict) -> dict:
+    raw_status = first_value(item, "hcClaimStatus")
+    raw_type = first_value(item, "hcClaimType")
     return {
         "policy_item_code": first_value(item, "policyItemCode"),
-        "status": STATUS_MAP.get(first_value(item, "hcClaimStatus"), first_value(item, "hcClaimStatus")),
-        "claim_type": TYPE_MAP.get(first_value(item, "hcClaimType"), first_value(item, "hcClaimType")),
+        "status": STATUS_MAP.get(_safe_str(raw_status), raw_status),
+        "claim_type": TYPE_MAP.get(_safe_str(raw_type), raw_type),
         "claim_text": strip_html(first_value(item, "hcClaim")),
         "health_relationship": first_value(item, "hcHealthRelationship"),
         "conditions_of_use": strip_html(first_value(item, "hcCondOfUse")),
@@ -150,7 +159,7 @@ def main() -> int:
     print(f"[parse] status breakdown: {counts}")
 
     sample = next((r for r in records if r["status"] == "authorised"), records[0])
-    print(f"[parse] sample authorised claim:")
+    print("[parse] sample authorised claim:")
     print(f"    {sample['claim_text'][:160]}...")
     print(f"    relationship: {sample['health_relationship']}")
     print(f"    conditions:   {(sample['conditions_of_use'] or '')[:120]}")

@@ -77,11 +77,11 @@ export default function Portfolio() {
             </div>
             <span className="font-semibold tracking-tight">sku-regulator</span>
           </div>
-          <nav className="flex items-center gap-6 text-sm text-muted">
+          <nav className="flex items-center gap-3 text-sm text-muted sm:gap-6">
             <Link href="/" className="hover:text-foreground">Pipeline</Link>
             <Link href="/explore" className="hover:text-foreground">Explore</Link>
             <Link href="/portfolio" className="text-foreground">Portfolio</Link>
-            <Link href="/graph" className="hover:text-foreground">Graph</Link>
+            <Link href="/graph" className="hidden hover:text-foreground sm:inline">Graph</Link>
           </nav>
         </div>
       </header>
@@ -199,7 +199,7 @@ export default function Portfolio() {
                       {a.claim_code && (
                         <code className="rounded bg-accent-soft px-1.5 py-0.5 font-mono text-xs text-accent">{a.claim_code}</code>
                       )}
-                      <span className="rounded-full bg-line px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted">
+                      <span className="rounded-full bg-line px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-foreground/80">
                         {a.severity}
                       </span>
                     </div>

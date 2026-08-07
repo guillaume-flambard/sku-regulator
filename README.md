@@ -97,7 +97,7 @@ ingredients as an interactive force graph.
 
 ## Tests
 
-Three layers, each runnable on its own (see `Makefile`):
+Four layers, each runnable on its own (see `Makefile`):
 
 ```bash
 pip install -r requirements-dev.txt
@@ -105,15 +105,26 @@ pip install -r requirements-dev.txt
 make test-unit         # parser + ingredient detection + RRF fusion (no infra)
 make test-integration  # schema + retrieval against the isolated test DB
 make test-api          # FastAPI endpoints (health, search, ask, products, anomalies)
-make test-e2e          # Playwright: home, explore, portfolio, graph (needs :8000 + :3000)
+make test-e2e          # Playwright: home, explore, portfolio, graph, a11y, layout
 make test              # everything
+make audit             # SBOM/vuln scan (pip-audit + npm audit)
+make lint              # ruff lint + format check
 ```
 
 - **Unit tests** run without any infrastructure (they mock the DB).
 - **Integration + API tests** use a dedicated `sku_regulator_test` database
   (created automatically) so the live demo database is never touched.
 - **E2E** re-seeds the demo data before running, so resolve/undo and the
-  anomaly queue are deterministic.
+  anomaly queue are deterministic. It also runs automated accessibility
+  (axe-core, WCAG A/AA) and layout-overflow checks on all four pages.
+- **RAG safety tests** (`tests/test_rag_safety.py`, marked `slow`) hit the real
+  local LLM and verify faithfulness (answers don't invent statuses), output
+  format (register codes + Sources), and prompt-injection resistance.
+- **Resilience tests** (`tests/test_resilience.py`) confirm the API returns
+  clean JSON 500s when the DB is unreachable, and that `/api/health` stays up.
+- **Security**: SQL is parameterised, no `innerHTML`, CORS restricted to the
+  local web origin, security headers set on the web app, `d3-color` ReDoS
+  fixed via npm override, and `pip-audit`/`npm audit` report no known CVEs.
 
 ## Notes on scope
 

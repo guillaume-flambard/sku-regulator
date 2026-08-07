@@ -7,7 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from ingest.parse_policy_items import (  # noqa: E402
+from ingest.parse_policy_items import (
     STATUS_MAP,
     all_nodes,
     all_values,
@@ -36,6 +36,7 @@ def make_node(value_identifier, value, children=None):
 
 # --- walk ----------------------------------------------------------------
 
+
 def test_walk_yields_root_and_children_depth_first():
     leaf_a = make_node("fieldA", "a")
     leaf_b = make_node("fieldB", "b")
@@ -51,20 +52,29 @@ def test_walk_handles_empty_children():
 
 # --- all_values / first_value -------------------------------------------
 
+
 def test_all_values_collects_repeated_identifiers():
-    item = make_node("root", None, [
-        make_node("hcEntryId", "224"),
-        make_node("hcEntryId", "230"),
-        make_node("hcOther", "x"),
-    ])
+    item = make_node(
+        "root",
+        None,
+        [
+            make_node("hcEntryId", "224"),
+            make_node("hcEntryId", "230"),
+            make_node("hcOther", "x"),
+        ],
+    )
     assert all_values(item, "hcEntryId") == ["224", "230"]
 
 
 def test_all_values_ignores_none_values():
-    item = make_node("root", None, [
-        make_node("hcEntryId", None),
-        make_node("hcEntryId", "9"),
-    ])
+    item = make_node(
+        "root",
+        None,
+        [
+            make_node("hcEntryId", None),
+            make_node("hcEntryId", "9"),
+        ],
+    )
     assert all_values(item, "hcEntryId") == ["9"]
 
 
@@ -82,6 +92,7 @@ def test_all_nodes_returns_node_dicts_not_values():
 
 
 # --- strip_html ----------------------------------------------------------
+
 
 def test_strip_html_removes_tags_and_collapses_space():
     assert strip_html("<p>Hello <b>world</b></p>") == "Hello world"
@@ -102,16 +113,23 @@ def test_strip_html_none():
 
 # --- nested EFSA / legislation ------------------------------------------
 
+
 def test_efsa_references_extracts_nested_map():
-    item = make_node("root", None, [
-        make_node("hcEfsaOpinionReferenceMap", None, [
-            make_node("hcEfsaQuestionNbr", "Q-2021-00073"),
-            make_node("hcEfsaQuestionUrl", "https://efsa.example/73"),
-        ]),
-    ])
-    assert efsa_references(item) == [
-        {"reference": "Q-2021-00073", "url": "https://efsa.example/73"}
-    ]
+    item = make_node(
+        "root",
+        None,
+        [
+            make_node(
+                "hcEfsaOpinionReferenceMap",
+                None,
+                [
+                    make_node("hcEfsaQuestionNbr", "Q-2021-00073"),
+                    make_node("hcEfsaQuestionUrl", "https://efsa.example/73"),
+                ],
+            ),
+        ],
+    )
+    assert efsa_references(item) == [{"reference": "Q-2021-00073", "url": "https://efsa.example/73"}]
 
 
 def test_efsa_references_skips_empty():
@@ -120,13 +138,21 @@ def test_efsa_references_skips_empty():
 
 
 def test_legislations_extracts_nested_fields():
-    item = make_node("root", None, [
-        make_node("hcLegislationsComplex", None, [
-            make_node("hcLegalActPubType", "HCPT_ADDITION"),
-            make_node("hcLegislation", "1945255"),
-            make_node("hcEurLexUrl", "https://eurlex/1945255"),
-        ]),
-    ])
+    item = make_node(
+        "root",
+        None,
+        [
+            make_node(
+                "hcLegislationsComplex",
+                None,
+                [
+                    make_node("hcLegalActPubType", "HCPT_ADDITION"),
+                    make_node("hcLegislation", "1945255"),
+                    make_node("hcEurLexUrl", "https://eurlex/1945255"),
+                ],
+            ),
+        ],
+    )
     assert legislations(item) == [
         {"act": "HCPT_ADDITION", "legislation": "1945255", "eurlex_url": "https://eurlex/1945255"}
     ]
@@ -134,17 +160,25 @@ def test_legislations_extracts_nested_fields():
 
 # --- parse_item ----------------------------------------------------------
 
+
 def test_parse_item_maps_codes_and_flattens():
-    item = make_node("policyItemObject", None, [
-        make_node("policyItemCode", "POL-HC-6510"),
-        make_node("hcClaimStatus", "HCCS_AUTHORISED"),
-        make_node("hcClaimType", "HCLBT_13_1"),
-        make_node("hcClaim", "<p>Vitamin C contributes to the normal function of the immune system</p>"),
-        make_node("hcHealthRelationship", "maintenance of the normal function of the immune system"),
-        make_node("hcCondOfUse", "<p>Use only for food which contains 1 g per portion</p>"),
-        make_node("hcEntryId", "101"),
-        make_node("hcProtectDataGrantedForClaim", "no"),
-    ])
+    item = make_node(
+        "policyItemObject",
+        None,
+        [
+            make_node("policyItemCode", "POL-HC-6510"),
+            make_node("hcClaimStatus", "HCCS_AUTHORISED"),
+            make_node("hcClaimType", "HCLBT_13_1"),
+            make_node(
+                "hcClaim",
+                "<p>Vitamin C contributes to the normal function of the immune system</p>",
+            ),
+            make_node("hcHealthRelationship", "maintenance of the normal function of the immune system"),
+            make_node("hcCondOfUse", "<p>Use only for food which contains 1 g per portion</p>"),
+            make_node("hcEntryId", "101"),
+            make_node("hcProtectDataGrantedForClaim", "no"),
+        ],
+    )
     rec = parse_item(item)
     assert rec["policy_item_code"] == "POL-HC-6510"
     assert rec["status"] == "authorised"
@@ -156,10 +190,14 @@ def test_parse_item_maps_codes_and_flattens():
 
 
 def test_parse_item_handles_missing_fields():
-    item = make_node("policyItemObject", None, [
-        make_node("policyItemCode", "POL-HC-0000"),
-        make_node("hcClaim", "no structure"),
-    ])
+    item = make_node(
+        "policyItemObject",
+        None,
+        [
+            make_node("policyItemCode", "POL-HC-0000"),
+            make_node("hcClaim", "no structure"),
+        ],
+    )
     rec = parse_item(item)
     assert rec["policy_item_code"] == "POL-HC-0000"
     assert rec["status"] is None  # unknown status code
@@ -169,12 +207,16 @@ def test_parse_item_handles_missing_fields():
 
 
 def test_parse_item_handles_repeated_reasons():
-    item = make_node("policyItemObject", None, [
-        make_node("policyItemCode", "POL-HC-7424"),
-        make_node("hcClaimStatus", "HCCS_NON_AUTHORISED"),
-        make_node("hcReasonsForNonAuth", "HC_RR_132"),
-        make_node("hcReasonsForNonAuth", "HC_RR_135"),
-    ])
+    item = make_node(
+        "policyItemObject",
+        None,
+        [
+            make_node("policyItemCode", "POL-HC-7424"),
+            make_node("hcClaimStatus", "HCCS_NON_AUTHORISED"),
+            make_node("hcReasonsForNonAuth", "HC_RR_132"),
+            make_node("hcReasonsForNonAuth", "HC_RR_135"),
+        ],
+    )
     rec = parse_item(item)
     assert rec["reasons_for_non_auth"] == ["HC_RR_132", "HC_RR_135"]
 
@@ -195,3 +237,96 @@ def test_status_map_contains_all_codes():
 )
 def test_strip_html_parametrized(raw, expected):
     assert strip_html(raw) == expected
+
+
+# --- edge-case matrix (malformed / hostile input) -------------------------
+
+
+def test_parse_item_empty_node():
+    """A node with no children must not crash — all fields fall back to None."""
+    rec = parse_item(make_node("policyItemObject", None, []))
+    assert rec["policy_item_code"] is None
+    assert rec["status"] is None
+    assert rec["claim_text"] is None
+    assert rec["efsa_references"] == []
+    assert rec["legislation"] == []
+
+
+def test_parse_item_children_is_none():
+    """Some nodes may carry childrenValues=None instead of [] — walk must cope."""
+    node = {
+        "value": "POL-HC-9",
+        "childrenValues": None,
+        "valueIdentifier": "policyItemCode",
+        "id": 1,
+        "lastModificationDate": "",
+        "valueDefinitionId": 1,
+        "ordinal": None,
+        "parentValueId": None,
+        "collectionId": None,
+    }
+    root = make_node("policyItemObject", None, [node])
+    rec = parse_item(root)
+    assert rec["policy_item_code"] == "POL-HC-9"
+
+
+@pytest.mark.parametrize(
+    "bad_value",
+    [None, 0, [], {}, "   ", "&lt;not closed"],
+)
+def test_parse_item_tolerates_bad_scalar_values(bad_value):
+    """Scalar fields with unexpected types must not raise in walk/all_values."""
+    item = make_node(
+        "policyItemObject",
+        None,
+        [make_node("hcClaim", bad_value), make_node("hcClaimStatus", bad_value)],
+    )
+    rec = parse_item(item)  # must not raise
+    assert isinstance(rec, dict)
+
+
+def test_parse_item_deep_nesting():
+    """A deeply nested tree must be walked depth-first without recursion issues."""
+    deep = make_node("hcEntryId", "leaf")
+    for _ in range(200):
+        deep = make_node("wrapper", None, [deep])
+    item = make_node("policyItemObject", None, [make_node("hcClaim", "x"), deep])
+    rec = parse_item(item)
+    assert rec["policy_item_code"] is None  # none present, but no crash
+    assert "leaf" in rec["substances_or_entries"]
+
+
+def test_parse_item_unknown_identifiers_ignored():
+    """Unknown valueIdentifiers are simply ignored — forward-compatible."""
+    item = make_node(
+        "policyItemObject",
+        None,
+        [
+            make_node("policyItemCode", "POL-HC-1"),
+            make_node("hcClaim", "known"),
+            make_node("hcSomeFutureField", "future value"),
+        ],
+    )
+    rec = parse_item(item)
+    assert rec["policy_item_code"] == "POL-HC-1"
+    assert "future value" not in rec["claim_text"]
+
+
+def test_parse_item_html_injection_not_interpreted():
+    """Claim text is unescaped text, never executed as HTML/JS.
+
+    The <script> tags are stripped; any residual text renders as inert text
+    content (the UI uses textContent, never innerHTML).
+    """
+    item = make_node(
+        "policyItemObject",
+        None,
+        [
+            make_node("policyItemCode", "POL-HC-2"),
+            make_node("hcClaim", "<script>alert(1)</script>Harmless"),
+        ],
+    )
+    rec = parse_item(item)
+    assert "<script>" not in rec["claim_text"]
+    assert "</script>" not in rec["claim_text"]
+    assert "Harmless" in rec["claim_text"]
