@@ -14,7 +14,7 @@ import { execSync } from "node:child_process";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const COMPOSED = resolve(ROOT, "video", "final", "composed.mp4");
-const MUSIC = resolve(ROOT, "audio", "AirplaneMode-JoshWoodward.mp3");
+const MUSIC = resolve(ROOT, "audio", "Inspired-KevinMacLeod.mp3");
 const OUT = resolve(ROOT, "video", "final", "sku-regulator-demo.mp4");
 
 if (!existsSync(COMPOSED)) throw new Error(`composed video missing: ${COMPOSED}. Run the Remotion render first.`);
@@ -30,7 +30,7 @@ const durOut = execSync(
 const dur = parseFloat(durOut) || 60;
 const fadeOutStart = Math.max(0, dur - 3);
 
-// -stream_loop -1: loop the track; fade in 2s, fade out last 3s; volume ~14%
+// -stream_loop -1: loop the track; fade in 2s, fade out last 3s; volume ~35%
 // -shortest: end when the video ends
 const cmd = [
   "ffmpeg -y",
@@ -38,7 +38,7 @@ const cmd = [
   `-i ${JSON.stringify(MUSIC)}`,
   "-filter_complex",
   JSON.stringify(
-    `[1:a]afade=t=in:st=0:d=2,afade=t=out:st=${fadeOutStart}:d=3,volume=0.14[bg];` +
+    `[1:a]afade=t=in:st=0:d=2,afade=t=out:st=${fadeOutStart}:d=3,volume=0.5[bg];` +
     "[0:a][bg]amix=inputs=2:duration=shortest:dropout_transition=2[aout]",
   ),
   "-map 0:v:0 -map [aout]",

@@ -15,7 +15,7 @@ make demo-video      # 4 steps below
 |---|---|---|
 | 1 | `scripts/fetch_music.mjs` | Downloads the background track (CC BY 4.0) into `audio/` |
 | 2 | `scripts/record_demo.mjs` | Plays the scene actions in real Chromium, `recordVideo` → `video/raw/scene-*.webm` |
-| 3 | `npx remotion render` | Composes the scenes: title cards, word-level karaoke captions, Ken-Burns zooms, `TransitionSeries` (wipe/iris/fade) → `video/final/composed.mp4` |
+| 3 | `npx remotion render` | Composes the scenes: title cards, lower-third captions, Ken-Burns zooms, `TransitionSeries` (wipe/iris/fade) → `video/final/composed.mp4` |
 | 4 | `scripts/assemble_video.mjs` | Mixes the music at low volume with fades → `video/final/sku-regulator-demo.mp4` |
 
 Output: **`video/final/sku-regulator-demo.mp4`** (1080p, H.264 + AAC).
@@ -24,12 +24,12 @@ Output: **`video/final/sku-regulator-demo.mp4`** (1080p, H.264 + AAC).
 
 - **Transitions** (`@remotion/transitions`): `wipe` between scenes, `iris` into
   the compliance scene, `fade` into the end card — no hand-rolled fades.
-- **Word-level captions** (`@remotion/captions`): karaoke-style captions where
-  the active word is highlighted in the brand green. Since there is no
-  voiceover, timings are synthesized from `durationSec` per scene
-  (`combineTokensWithinMilliseconds: 500` for a fast demo pace).
+- **Lower-third captions** (not karaoke): one short phrase at a time in a
+  discreet bottom pill — the professional product-demo look (Screen Studio
+  style), not TikTok-style word-by-word. A single accent word (brand green)
+  guides the eye. Timings are derived from each scene's `durationSec`.
 - **Motion restraint**: Ken-Burns zooms stay subtle (scale ≤ 1.06) and every
-  easing uses `Easing.out(Easing.quad)`; captions stay readable for ≥2.5s.
+  easing uses `Easing.out(Easing.quad)`; captions hold ≥2.5s (readable twice).
 - **Editable props**: the Composition exposes a Zod `schema` +
   `defaultProps` (`web/remotion/schema.ts`) so an agent can regenerate the video
   with new text/durations without touching the React code.
@@ -50,11 +50,11 @@ the actions, subtitles, and durations, then re-run `make demo-video`.
 
 ## Music & licensing
 
-- Track: **"Airplane Mode"** by Josh Woodward, from *The Beautiful Machine*
-  (2014). Download: <https://www.joshwoodward.com/mp3/JoshWoodward-TheBeautifulMachine-11-AirplaneMode.mp3>
+- Track: **"Inspired"** by Kevin MacLeod (incompetech.com). Download:
+  <https://incompetech.com/music/royalty-free/mp3-royaltyfree/Inspired.mp3>
 - License: **Creative Commons Attribution 4.0** — free to use, attribution required.
 - Attribution (include in any distributed video):
-  *Music: "Airplane Mode" by Josh Woodward (https://www.joshwoodward.com), CC BY 4.0.*
+  *Music: "Inspired" by Kevin MacLeod (https://incompetech.com), CC BY 4.0.*
 - Also shown in the video's end card.
 
 The MP3 is not committed (binary); `fetch_music.mjs` downloads it on demand.

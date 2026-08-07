@@ -24,7 +24,7 @@ export const RemotionRoot: React.FC = () => {
         endCard: {
           title: "sku-regulator",
           tagline: "From a stubborn EU portal to compliant, multi-country product data.",
-          credit: 'Music: "Airplane Mode" by Josh Woodward (joshwoodward.com), CC BY 4.0.',
+          credit: 'Music: "Inspired" by Kevin MacLeod (incompetech.com), CC BY 4.0.',
         },
       }}
     />

@@ -1,110 +1,100 @@
 import React from "react";
-import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
-import { createTikTokStyleCaptions, type Caption, type TikTokPage } from "@remotion/captions";
-import { Easing } from "remotion";
+import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig, Easing } from "remotion";
 import type { Scene } from "../../scripts/demo-script";
 
 /**
- * Word-level karaoke captions (burn-in).
+ * Professional lower-third captions (burn-in).
  *
- * There is no voiceover, so timings are synthesized from the scene duration:
- * each subtitle line is split into words and spread evenly across the caption
- * window. `combineTokensWithinMilliseconds` controls how many words appear per
- * page (500ms reads fast for a product demo).
+ * One short phrase at a time (not word-by-word karaoke — that reads as
+ * TikTok/Shorts, not a product demo). Each subtitle appears as a discreet
+ * pill at the bottom, fades/slides in subtly, and holds long enough to read
+ * twice. An optional accent word (brand green) guides the eye without the
+ * karaoke pop effect.
  */
 
 const ACCENT = "#0f6b4f";
-const COMBINE_MS = 500;
+const FADE_IN_FRAMES = 12;
+const FADE_OUT_FRAMES = 12;
 
-/** Split one subtitle line into word-level Captions with synthetic timing. */
-function lineToCaptions(line: string, startMs: number, durationMs: number): Caption[] {
-  const words = line.split(/\s+/).filter(Boolean);
-  if (!words.length) return [];
-  const per = durationMs / words.length;
-  return words.map((word, i) => ({
-    text: word,
-    startMs: startMs + i * per,
-    endMs: startMs + (i + 1) * per,
-    timestampMs: startMs + i * per,
-    confidence: 1,
-  }));
+/** Words worth highlighting in the brand accent (lowercased match). */
+const ACCENT_WORDS = new Set([
+  "authorised",
+  "not authorised",
+  "allowed",
+  "not_allowed",
+  "review",
+  "needs review",
+  "2,337",
+  "real data",
+  "human-in-the-loop",
+  "not a mock",
+]);
+
+function accentify(line: string): React.ReactNode[] {
+  // highlight any word that is part of an accent phrase; fall back to first
+  // match within the line
+  const lower = line.toLowerCase();
+  const matched = Array.from(ACCENT_WORDS).find((w) => lower.includes(w));
+  if (!matched) return [line];
+  const idx = lower.indexOf(matched);
+  const start = line.slice(0, idx);
+  const mid = line.slice(idx, idx + matched.length);
+  const end = line.slice(idx + matched.length);
+  return [
+    start,
+    <span key="accent" style={{ color: ACCENT, fontWeight: 700 }}>
+      {mid}
+    </span>,
+    end,
+  ];
 }
 
-/** Build all caption pages for a scene, timed across its full duration. */
-export function sceneCaptions(scene: Scene): TikTokPage[] {
-  const lines = scene.subtitles.length ? scene.subtitles : [scene.title];
-  const totalMs = scene.durationSec * 1000;
-  const chunk = Math.max(1000, Math.floor(totalMs / Math.max(1, lines.length)));
-  const captions: Caption[] = [];
-  lines.forEach((line, i) => {
-    const start = (i * totalMs) / Math.max(1, lines.length);
-    captions.push(...lineToCaptions(line, start, chunk));
-  });
-  return createTikTokStyleCaptions({
-    captions,
-    combineTokensWithinMilliseconds: COMBINE_MS,
-  }).pages;
-}
-
-function CaptionPage({ page }: { page: TikTokPage }) {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const nowMs = (frame / fps) * 1000;
-  const absMs = page.startMs + nowMs;
-
+/** One lower-third caption pill for a single subtitle line. */
+function CaptionLine({ line, appear }: { line: string; appear: number }) {
   return (
     <div
       style={{
-        fontSize: 40,
+        opacity: appear,
+        transform: `translateY(${(1 - appear) * 14}px)`,
+        fontSize: 38,
         fontWeight: 600,
         color: "#fff",
         backgroundColor: "rgba(24,33,29,0.82)",
-        padding: "14px 28px",
+        padding: "12px 26px",
         borderRadius: 12,
         maxWidth: 1500,
         textAlign: "center",
+        letterSpacing: "-0.2px",
       }}
     >
-      {page.tokens.map((token, i) => {
-        const active = absMs >= token.fromMs && absMs < token.toMs;
-        const appear = interpolate(
-          frame,
-          [0, Math.max(1, (token.fromMs / 1000) * fps)],
-          [0.55, 1],
-          { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.out(Easing.quad) },
-        );
-        return (
-          <span
-            key={`${token.text}-${i}`}
-            style={{
-              opacity: appear,
-              color: active ? ACCENT : "#fff",
-              fontWeight: active ? 700 : 600,
-              transform: active ? "scale(1.06)" : "scale(1)",
-              display: "inline-block",
-              marginRight: "0.35em",
-            }}
-          >
-            {token.text}
-          </span>
-        );
-      })}
+      {accentify(line)}
     </div>
   );
 }
 
-/** Renders the active caption page (burn-in) at the bottom of the scene. */
+/** Renders the active lower-third caption for the scene. */
 export const Captions: React.FC<{ scene: Scene }> = ({ scene }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const pages = sceneCaptions(scene);
-  const nowMs = (frame / fps) * 1000;
-  const page = pages.find((p) => nowMs >= p.startMs && nowMs < p.startMs + p.durationMs);
+  const lines = scene.subtitles.length ? scene.subtitles : [scene.title];
 
-  if (!page) return null;
+  // each line holds for a slice of the scene duration (min 2.5s, max ~6s)
+  const holdSec = Math.min(6, Math.max(2.5, scene.durationSec / lines.length));
+  const holdFrames = holdSec * fps;
+  const index = Math.min(lines.length - 1, Math.floor(frame / holdFrames));
+  const local = frame % holdFrames;
+
+  const appear = interpolate(
+    local,
+    [0, FADE_IN_FRAMES, holdFrames - FADE_OUT_FRAMES, holdFrames],
+    [0, 1, 1, 0],
+    { easing: Easing.out(Easing.quad), extrapolateRight: "clamp" },
+  );
+
+  if (appear <= 0.01) return null;
   return (
     <AbsoluteFill style={{ justifyContent: "flex-end", alignItems: "center", paddingBottom: 90, pointerEvents: "none" }}>
-      <CaptionPage page={page} />
+      <CaptionLine line={lines[index]} appear={appear} />
     </AbsoluteFill>
   );
 };

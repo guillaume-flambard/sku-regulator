@@ -9,7 +9,6 @@ export const demoVideoSchema = z.object({
     title: z.string(),
     tagline: z.string(),
     credit: z.string(),
-  }),
-});
+  }),});
 
 export type DemoVideoProps = z.infer<typeof demoVideoSchema>;
