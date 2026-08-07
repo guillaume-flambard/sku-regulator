@@ -79,7 +79,8 @@ cd web && npm install && npm run dev
 
 Open <http://localhost:3000>. The **Pipeline** page walks each step; **Explore**
 lets you ask the register in plain language; **Portfolio** shows SKU verdicts
-and the human-in-the-loop queue.
+and the human-in-the-loop queue; **Graph** renders products, claims and
+ingredients as an interactive force graph.
 
 ## Notes on scope
 
