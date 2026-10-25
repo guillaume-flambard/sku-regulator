@@ -2,7 +2,7 @@
 
 # sku-regulator
 
-**From a stubborn EU portal to compliant, multi-country product data.**
+**From a complex EU public register to traceable, reviewable product-claim data.**
 
 [![CI](https://github.com/guillaume-flambard/sku-regulator/actions/workflows/ci.yml/badge.svg)](https://github.com/guillaume-flambard/sku-regulator/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -10,7 +10,6 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org)
 [![Postgres](https://img.shields.io/badge/Postgres-16%20%2B%20pgvector-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org)
-[![Tests](https://img.shields.io/badge/93%20checks-green)](https://github.com/guillaume-flambard/sku-regulator/actions)
 
 </div>
 
@@ -38,16 +37,25 @@ capture tool involved).
 
 ## What this is
 
-A founding-engineer build. It scrapes the **real EU Register of Nutrition &
-Health Claims** (~2,300 claims), normalises it into a **Postgres + pgvector**
-schema, and answers the question every health brand asks: *"is this claim legal
-where I sell?"*
+A founding-engineer prototype that ingests data from the **EU Register of Nutrition and Health Claims**, normalises it in **PostgreSQL + pgvector**, and helps a reviewer investigate questions such as *"which source record supports this proposed claim?"*
 
-Every number in the UI is **live from the running pipeline**. Nothing mocked.
+The included demonstration shows data produced by its ingest and seed pipeline. It is **not** a continuously synchronized legal database. Counts are specific to the recorded dataset and may differ from today's official register. **No model-generated answer or per-country label is a legal authorization decision.** Human assessment of applicable rules, conditions of use, product ingredients, wording and data freshness remains required.
 
 <div align="center">
   <img src="docs/screenshot-explore.png" alt="sku-regulator Explore — RAG search + EU market map" width="700">
 </div>
+
+## Status, verification and limitations
+
+**Status:** demonstration / engineering case study, not production compliance software or legal advice. The [70-second 1080p video](https://github.com/guillaume-flambard/sku-regulator/releases/download/demo-video-v1/sku-regulator-demo.mp4) is a recorded scripted product flow, not proof of ongoing service availability or external adoption.
+
+| Available evidence | What it supports | What it does not prove |
+| --- | --- | --- |
+| [Recorded app walkthrough](https://github.com/guillaume-flambard/sku-regulator/releases/download/demo-video-v1/sku-regulator-demo.mp4) | Real captured UI stages: ingest, search, portfolio, graph | Correctness of regulatory conclusions today |
+| [CI workflows](https://github.com/guillaume-flambard/sku-regulator/actions/workflows/ci.yml) | Automated Python, frontend, integration, browser and video-module checks | Legal approval, absence of all vulnerabilities or operational readiness |
+| [Architecture case study](docs/engineering-case-study.md) | Data flow, trade-offs, specific controls, reproduction commands | Independent external-user acceptance |
+
+See [the official EU Register](https://ec.europa.eu/food/food-feed-portal/screen/health-claims/eu-register) for source information, and validate current data against the relevant legal instruments and market rules before making any label decision.
 
 ## The pipeline
 
@@ -63,7 +71,7 @@ portal       value-tree       (FTS + embeddings)       answer           queue
 | **01 Ingest** | Pull the register from `ec.europa.eu` — the same data the web UI renders. | Reverse-engineered the FIP backend API (`policy-items?foodDomain=nut&authorisationType=nut_auth`). Real browser User-Agent, crawl-friendly. |
 | **02 Extract** | The register returns a recursive "value tree". Flatten each claim into a clean record. | Deterministic parser walks `valueIdentifier` nodes → `claims.jsonl` + best-effort ingredient extraction. |
 | **03 Store** | A claim is authorised in one market, not another. Model that. | Postgres 16 + pgvector. Schema `products → skus → claims → ingredients → sources` + `country_status` pivot + 768-dim embeddings (local Ollama). HNSW index. |
-| **04 Retrieve** | Compliance questions mix exact wording with intent. | Reciprocal-rank fusion over Postgres FTS **and** pgvector cosine similarity. Every hit carries the register code, EFSA opinion and per-country verdict. |
+| **04 Retrieve** | Compliance questions mix exact wording with intent. | Reciprocal-rank fusion over Postgres FTS **and** pgvector cosine similarity. The retrieval interface carries source identifiers, supporting references and a modelled country status that must be checked against current legal conditions. |
 | **05 Verify** | Wrong data has consequences — so decisions are made by people. | Per-SKU compliance verdict + anomaly queue for low-confidence extractions and marketing-variant wording. |
 
 ## Repository layout
@@ -97,16 +105,15 @@ queue; **Graph** renders products, claims and ingredients as a force graph.
 
 ```bash
 make test        # 73 Python tests + 20 Playwright E2E
-make audit       # pip-audit + npm audit (0 known CVEs)
+make audit       # run dependency checks; results vary over time
 make lint        # ruff lint + format
 ```
 
-- **RAG safety**: faithfulness (answers never invent statuses), prompt-injection
-  resistance, strict output format.
+- **RAG safety tests**: scenarios exercise source-grounding, unexpected instructions and output formats; they do not guarantee the model never produces an incorrect statement.
 - **Resilience**: clean JSON 500s when the DB is down; `/api/health` stays up.
 - **Security**: parameterised SQL, no `innerHTML`, CORS locked to the local
   origin, security headers, `d3-color` ReDoS fixed via npm override.
-- **CI**: 5 jobs on every push (unit, frontend, integration, e2e, video).
+- **CI**: five jobs cover unit, frontend, integration, E2E and video-module checks. See the latest GitHub Actions run for current status.
 
 ## Design system
 
@@ -120,6 +127,10 @@ with the product and the video.
 - [`docs/demo-runbook.md`](docs/demo-runbook.md) — the scripted demo flow
 - [`docs/video-pipeline.md`](video/docs/video-pipeline.md) — how the video is made
 
+## Contributing and security
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for a reproducible review workflow and [SECURITY.md](SECURITY.md) for private vulnerability reporting. Do not use real patient, customer or other confidential data in demonstration fixtures.
+
 ---
 
-*From the register to the label — compliance, end to end.*
+*From source records to reviewable evidence — never an automated legal verdict.*
